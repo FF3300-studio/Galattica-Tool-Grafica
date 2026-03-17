@@ -245,14 +245,25 @@ ${faceCSS}
   };
 
   if (hasInst || hasUser) {
-    const totalFooterH = hasUser && hasInst ? (hUser + hInst + logoGap) : (hasUser ? hUser : hInst);
     // Position it at the very top of the bottom margin area (closest to content)
     const footerYStart = H - margins.bottom + Math.round(margins.bottom * 0.05);
-    if (hasUser) {
-        renderLogoRow(state.logos, hUser, footerYStart);
-        if (hasInst) renderLogoRow([state.institutionalLogo], hInst, footerYStart + hUser + logoGap);
+    
+    const isEventoPli = state.layout === 'EVENTO PLI';
+    const isTargetFormat = (state.canvasW === 1080 && state.canvasH === 1440) || // PORTRAIT
+                           (state.canvasW === 1080 && state.canvasH === 1920) || // STORIES
+                           (state.canvasW === 2480 && state.canvasH === 3508) || // A4
+                           (state.canvasW === 3508 && state.canvasH === 4961);   // A3
+    
+    if (isEventoPli && isTargetFormat && hasInst && hasUser) {
+      // Combine institutional and user logos in one row, institutional first
+      const combinedRowH = Math.max(hInst, hUser);
+      const combinedLogos = [state.institutionalLogo, ...state.logos];
+      renderLogoRow(combinedLogos, combinedRowH, footerYStart);
+    } else if (hasUser) {
+      renderLogoRow(state.logos, hUser, footerYStart);
+      if (hasInst) renderLogoRow([state.institutionalLogo], hInst, footerYStart + hUser + logoGap);
     } else if (hasInst) {
-        renderLogoRow([state.institutionalLogo], hInst, footerYStart);
+      renderLogoRow([state.institutionalLogo], hInst, footerYStart);
     }
   }
 
