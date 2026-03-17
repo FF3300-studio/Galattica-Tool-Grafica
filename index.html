@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Galattica Tool Grafiche</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <button id="panelToggle" aria-label="Apri/chiudi pannello">☰</button>
+
+    <div id="app">
+      <aside>
+        <h3 style="font-weight: 800; color: var(--ink); margin-bottom: 2rem;">GALATTICA<br />TOOL GRAFICHE<br /></h3>
+
+        <label>Tipologia</label>
+        <select id="layout">
+          <option value="EVENTO PLI">EVENTO PLI</option>
+          <option value="ACCENDIAMO I MOTORI">ACCENDIAMO I MOTORI</option>
+        </select>
+
+        <label>Formati</label>
+        <select id="pageSize">
+          <option value="1080x1440">1080×1440 px (Portrait)</option>
+          <option value="1080x1920">1080×1920 px (Stories)</option>
+          <option value="cover-web">686×457 px (Cover Web)</option>
+          <option value="A4">A4 (2480×3508 px)</option>
+          <option value="A3">A3 (3508×4961 px)</option>
+        </select>
+
+        <div id="topLogoControls">
+        <label>Logo Galattica</label>
+        <select id="galatticaLogoSelect">
+          <option value="none">Nessuno</option>
+          <option value="white">Bianco</option>
+          <option value="black" selected>Nero</option>
+        </select>
+
+        <label>Colore Logo Istituzionale</label>
+        <select id="institutionalLogoColorSelect">
+          <option value="none">Nessuno</option>
+          <option value="white">Bianco</option>
+          <option value="black" selected>Nero</option>
+        </select>
+        </div>
+
+        <div id="inputs"></div>
+
+
+
+        <hr class="sep" />
+        
+        <label>Colore Sfondo</label>
+        <div id="bgPicker" class="swatch-group"></div>
+
+        <label>Colore Testo</label>
+        <div id="textPicker" class="swatch-group"></div>
+
+        <hr class="sep" />
+
+        <h3>Immagine di Sfondo</h3>
+        <div id="bgSelectorContainer"></div>
+
+        <hr class="sep" />
+
+        <div id="bottomLogoControls">
+        <h3>Loghi</h3>
+        <p class="muted">Carica uno o più loghi (SVG/PNG) da affiancare.</p>
+        
+        <!-- List of active logos -->
+        <div id="logoList" style="margin-bottom:0.5rem;"></div>
+
+        <input type="file" id="logoInput" multiple accept=".svg, .png, .jpg, .jpeg" />
+        <small class="muted" style="display:block; margin-top:4px;">Il primo logo predefinito è istituzionale.</small>
+        </div>
+
+        <hr class="sep" />
+
+        <hr class="sep" />
+
+        <h3>Preset</h3>
+        <p class="muted">
+          Salva o ricarica tutte le impostazioni (testi, colori, layout, slider,
+          logo, sfondo).
+        </p>
+        <div class="preset-actions">
+          <button id="exportPresetBtn" type="button">
+            Esporta preset (.json)
+          </button>
+          <button id="importPresetBtn" type="button" style="margin-top: 3px;">Importa preset</button>
+          <input
+            id="importPresetInput"
+            type="file"
+            accept="application/json"
+            style="display: none"
+          />
+        </div>
+
+        
+        <hr class="sep" />
+        <h3>Export</h3>
+<label>Moltiplicatore PNG</label>
+        <input type="number" id="scale" value="1" min="1" max="5" />
+
+        <button id="exportPngBtn" style="margin-top: 10px;">Esporta PNG</button>
+        <button id="exportPdfBtn" style="margin-top: 10px;">Esporta PDF (Stampa)</button>
+        <div class="spacer-bottom" aria-hidden="true"></div>
+      </aside>
+      <div id="backdrop" aria-hidden="true"></div>
+
+      <main>
+        <div id="artboard">
+          <canvas id="canvas"></canvas>
+        </div>
+      </main>
+    </div>
+
+    <div id="zoomPanel">
+      <label for="zoomRange">Zoom</label>
+      <input type="range" id="zoomRange" min="10" max="100" value="100" />
+      <button id="resetZoom">Reset</button>
+    </div>
+
+    <svg id="measureSVG" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

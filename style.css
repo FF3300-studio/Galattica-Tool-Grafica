@@ -1,0 +1,512 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+/* Toggle button (visible anche desktop) */
+#panelToggle {
+  display: none; /* nascosto su desktop */
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  z-index: 1100;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 20px;
+}
+
+/* Grid layout desktop */
+#app {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  height: 100vh;
+  padding: 20px;
+  min-height: 0;
+  background: var(--bg);
+}
+
+/* Aside scrollable */
+aside {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  border: none;
+  border-radius: 24px;
+  background: var(--card);
+  height: 100%;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+aside h3 {
+  margin: 1.5rem 0 1rem;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  color: var(--accent);
+  border-bottom: 2px solid var(--stroke);
+  padding-bottom: 8px;
+}
+aside h3:first-child { margin-top: 0; }
+
+label {
+  display: block;
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.sep {
+  border: none;
+  border-top: 1px solid var(--stroke);
+  margin: 24px 0;
+}
+
+/* Main centers artboard both axes */
+main {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff; /* Neutral canvas wrapper */
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05); /* Soft shadow */
+}
+
+#artboard {
+  position: absolute; 
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  will-change: transform;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+canvas {
+  display: block;
+  background: #fff;
+}
+
+/* Zoom panel */
+#zoomPanel {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 99px;
+  padding: 8px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  max-width: 90vw;
+  z-index: 100;
+  font-size: 13px;
+  font-weight: 500;
+}
+#zoomPanel label { margin: 0; }
+
+/* Backdrop (solo mobile) */
+#backdrop {
+  display: none;
+}
+
+/* Design Tokens - Galattica Blue */
+:root {
+  --bg: #F0F4F8; 
+  --card: #FFFFFF;
+  --ink: #111827; 
+  --muted: #6B7280;
+  --accent: #0037A6; /* Galattica Blue */
+  --accent-light: #E0E7FF;
+  --stroke: #E5E7EB;
+  --radius: 12px;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 12px;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  margin-bottom: 1rem;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 55, 166, 0.1);
+}
+
+/* Buttons */
+button {
+  border: none;
+  background: var(--accent); 
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: 'Be Vietnam Pro';
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 55, 166, 0.2);
+}
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 55, 166, 0.3);
+  background: #002D8A;
+}
+button:active {
+  transform: translateY(0);
+}
+
+/* Secondary Buttons */
+#clearBgImageBtn, #resetZoom, #importPresetBtn {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+#clearBgImageBtn:hover, #resetZoom:hover, #importPresetBtn:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: var(--accent);
+}
+
+/* Custom Select for Backgrounds */
+.custom-select-wrapper {
+  position: relative;
+  user-select: none;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+.custom-select-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+  transition: all 0.2s;
+}
+.custom-select-trigger:hover {
+  border-color: var(--accent);
+}
+.custom-select-trigger .arrow {
+  font-size: 10px;
+  color: var(--muted);
+}
+.custom-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 50;
+  max-height: 250px;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+}
+.custom-options.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.custom-option {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.1s;
+  border-bottom: 1px solid var(--bg);
+}
+.custom-option:last-child {
+  border-bottom: none;
+}
+.custom-option:hover {
+  background: var(--bg);
+  color: var(--accent);
+}
+.custom-option img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--stroke);
+}
+.custom-option span {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Swatches */
+.swatch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.swatch-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 99px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.swatch-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.swatch-chip.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.swatch-chip:hover {
+  border-color: var(--accent);
+}
+
+/* Logo controls area */
+#logoList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.logo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F9FAFB;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+}
+
+/* Checkbox */
+.inline input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px; 
+  background: #fff;
+  border: 1px solid var(--stroke);
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.inline input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.inline input[type="checkbox"]:checked::after {
+  content: "✓";
+  font-size: 14px;
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+}
+
+/* Range input */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--stroke);
+  border-radius: 99px;
+  border: none;
+  box-shadow: none;
+  margin: 10px 0;
+  display: block;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 55, 166, 0.3);
+  border: 2px solid #fff;
+}
+
+/* ---------- Mobile / Tablet ---------- */
+body.aside-open {
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  #panelToggle {
+    display: flex;
+  }
+  #app {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
+  }
+  
+  /* Aside overlay */
+  aside {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100dvh;
+    width: min(85vw, 400px);
+    transform: translateX(-105%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    border-radius: 0 24px 24px 0;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.2);
+    padding-bottom: 2rem;
+  }
+  .spacer-bottom {
+    height: 100px; /* Added for mobile aside spacer */
+  }
+  
+  html.aside-open aside,
+  body.aside-open aside {
+    transform: translateX(0) !important;
+  }
+
+  /* Backdrop */
+  #backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  html.aside-open #backdrop,
+  body.aside-open #backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Main full-bleed */
+  main {
+    border-radius: 0;
+    background: var(--bg); /* Keep transparent/bg on mobile */
+    box-shadow: none;
+  }
+
+  /* Zoom panel centrato in basso */
+  #zoomPanel {
+    left: 20px;
+    right: 20px;
+    bottom: 24px;
+    transform: none; /* No translateX(50%) */
+    width: auto;
+    max-width: none;
+    padding: 10px 16px;
+    justify-content: space-between;
+    scale: 1.0; /* reset scale to avoid blurry edges */
+    border-radius: 16px;
+  }
+  
+  #zoomPanel input[type="range"] {
+    flex: 1;
+    margin: 0 12px;
+    height: 8px;
+  }
+  
+  #zoomPanel button {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 70px;
+    box-shadow: none;
+  }
+
+  #zoomPanel label {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+
+.preset-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input,
+select,
+textarea,
+button {
+  font-size: 16px; /* Avoid scale on iOS */
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}
