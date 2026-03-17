@@ -213,7 +213,7 @@ async function updateInstitutionalLogo() {
       return;
     }
 
-    const isPrint = pageSizeSelect.value === 'A3';
+    const isPrint = pageSizeSelect.value === 'A3' || pageSizeSelect.value === 'A4';
     const variant = state.institutionalLogoColor === 'white' ? 'white' : 'black';
     const files = isPrint ? CONFIG.logo.files.print : CONFIG.logo.files.social;
     const filename = files[variant];
