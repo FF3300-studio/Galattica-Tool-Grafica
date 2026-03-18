@@ -83,6 +83,8 @@ export const CONFIG = {
     defaultColor: "#FFFFFF",
     allowUserImage: true,
     aspectTolerance: 0.05,
+    // Note: This list is used as a FALLBACK if the server 
+    // does not allow directory listing of the /sfondi/ folder.
     files: [
       "galattica_output_001.png",
       "galattica_output_002.png",

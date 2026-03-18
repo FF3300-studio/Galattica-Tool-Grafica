@@ -12,6 +12,38 @@ import {
 } from "./ui.js";
 import { initPreset } from "./preset.js";
 
+async function fetchDynamicBackgrounds() {
+  const fallback = CONFIG.background.files || [];
+  try {
+    const resp = await fetch("sfondi/");
+    if (!resp.ok) return fallback;
+    const text = await resp.text();
+    
+    // Simple regex to find image links in a directory listing
+    // Matches href="filename.ext" where ext is png, jpg, jpeg, webp
+    const regex = /href="([^" ]+\.(?:png|jpg|jpeg|webp))"/gi;
+    const found = [];
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const filename = match[1];
+      // Avoid duplicates and parents
+      if (!found.includes(filename) && !filename.startsWith("..") && !filename.startsWith("/")) {
+        found.push(filename);
+      }
+    }
+    
+    if (found.length === 0) return fallback;
+    
+    // Merge with fallback and unique
+    const merged = Array.from(new Set([...fallback, ...found]));
+    console.log(`Found ${found.length} backgrounds dynamically. Total: ${merged.length}`);
+    return merged;
+  } catch (e) {
+    console.warn("Could not fetch dynamic backgrounds, using fallback.", e);
+    return fallback;
+  }
+}
+
 // ----- DOM refs -----
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: true });
@@ -503,18 +535,8 @@ resetZoomBtn.addEventListener("click", () => {
 exportPngBtn.addEventListener("click", exportPNG);
 if(exportPdfBtn) exportPdfBtn.addEventListener("click", exportPDF);
 
-const bgSelectorController = buildBgSelector(bgSelectorContainer, CONFIG.background.files, (res) => {
-  if (res) {
-    state.userBgDataURL = res.url;
-    state.userBgAR = res.width / res.height;
-    state.bgName = res.name || null;
-  } else {
-    state.userBgDataURL = null;
-    state.userBgAR = null;
-    state.bgName = null;
-  }
-  draw(true);
-});
+// BG Selector will be initialized in boot after dynamic fetch
+let bgSelectorController = null;
 
 // ----- Interactive Canvas (Panning & Pinch) -----
 (function setupCanvasInteractions() {
@@ -586,6 +608,8 @@ const bgSelectorController = buildBgSelector(bgSelectorContainer, CONFIG.backgro
   scaleInput.value = CONFIG.export.defaultScale;
   scaleInput.max = CONFIG.export.maxScale;
 
+  const bgFiles = await fetchDynamicBackgrounds();
+
   await preloadFontsForPreview();
   await preloadGalatticaLogos(state);
   await initDefaultLogo();
@@ -618,6 +642,19 @@ const bgSelectorController = buildBgSelector(bgSelectorContainer, CONFIG.backgro
   buildSwatches();
 
   draw(true);
+
+  bgSelectorController = buildBgSelector(bgSelectorContainer, bgFiles, (res) => {
+    if (res) {
+      state.userBgDataURL = res.url;
+      state.userBgAR = res.width / res.height;
+      state.bgName = res.name || null;
+    } else {
+      state.userBgDataURL = null;
+      state.userBgAR = null;
+      state.bgName = null;
+    }
+    draw(true);
+  });
 
   initPreset({
     state,
