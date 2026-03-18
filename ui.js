@@ -14,12 +14,7 @@ export function buildSwatchGroup(root, palette, initialHex, onChange) {
     box.className = "swatch-box";
     box.style.backgroundColor = c.hex;
 
-    const label = document.createElement("span");
-    label.className = "swatch-name";
-    label.textContent = c.name;
-
     chip.appendChild(box);
-    chip.appendChild(label);
     chip.addEventListener("click", () => {
       root
         .querySelectorAll(".swatch-chip")

@@ -304,10 +304,12 @@ button:active {
 .swatch-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid var(--stroke);
-  border-radius: 99px;
+  border-radius: 50%;
   background: #fff;
   cursor: pointer;
   transition: all 0.2s ease;

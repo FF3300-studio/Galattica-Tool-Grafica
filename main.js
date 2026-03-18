@@ -207,7 +207,7 @@ function buildSwatches() {
 // ----- Logo Handling -----
 async function updateInstitutionalLogo() {
   try {
-    if (state.institutionalLogoColor === 'none') {
+    if (state.institutionalLogoColor === 'none' || state.layout === 'ACCENDIAMO I MOTORI') {
       state.institutionalLogo = null;
       draw(true);
       return;
@@ -436,6 +436,19 @@ layoutSelect.addEventListener("change", () => {
   state.layout = layoutSelect.value;
   updateUrlParam(state.layout);
   updatePageSizeOptions();
+  
+  // Hide institutional logo color control for ACCENDIAMO I MOTORI
+  if (institutionalLogoColorSelect) {
+    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
+    institutionalLogoColorSelect.style.display = isAitm ? 'none' : 'block';
+    
+    // Also hide the label
+    const label = institutionalLogoColorSelect.previousElementSibling;
+    if (label && label.tagName === 'LABEL') {
+      label.style.display = isAitm ? 'none' : 'block';
+    }
+  }
+
   rebuildInputs();
   draw(true);
 });
@@ -588,6 +601,16 @@ const bgSelectorController = buildBgSelector(bgSelectorContainer, CONFIG.backgro
   } else {
     state.layout = "EVENTO PLI";
     if (layoutSelect) layoutSelect.value = "EVENTO PLI";
+  }
+
+  // Initial UI state for institutional logo color control
+  if (institutionalLogoColorSelect) {
+    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
+    institutionalLogoColorSelect.style.display = isAitm ? 'none' : 'block';
+    const label = institutionalLogoColorSelect.previousElementSibling;
+    if (label && label.tagName === 'LABEL') {
+      label.style.display = isAitm ? 'none' : 'block';
+    }
   }
 
   updatePageSizeOptions();
