@@ -15,29 +15,54 @@ import { initPreset } from "./preset.js";
 async function fetchDynamicBackgrounds() {
   const fallback = CONFIG.background.files || [];
   try {
-    const resp = await fetch("sfondi/");
-    if (!resp.ok) return fallback;
-    const text = await resp.text();
-    
-    // Simple regex to find image links in a directory listing
-    // Matches href="filename.ext" where ext is png, jpg, jpeg, webp
-    const regex = /href="([^" ]+\.(?:png|jpg|jpeg|webp))"/gi;
-    const found = [];
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      const filename = match[1];
-      // Avoid duplicates and parents
-      if (!found.includes(filename) && !filename.startsWith("..") && !filename.startsWith("/")) {
-        found.push(filename);
-      }
+    // 1. Try to fetch a potential JSON manifest or script (list.php)
+    // This is the cleanest way if the user can upload a small script.
+    const jsonResp = await fetch("sfondi/list.php");
+    if (jsonResp.ok) {
+        const data = await jsonResp.json();
+        if (Array.isArray(data)) return Array.from(new Set([...fallback, ...data]));
     }
+
+    // 2. Try the directory itself (works if directory listing is enabled)
+    const resp = await fetch("sfondi/");
+    if (resp.ok) {
+        const text = await resp.text();
+        const regex = /href="([^" ]+\.(?:png|jpg|jpeg|webp))"/gi;
+        const found = [];
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          const filename = match[1];
+          if (!found.includes(filename) && !filename.startsWith("..") && !filename.startsWith("/")) {
+            found.push(filename);
+          }
+        }
+        if (found.length > 0) return Array.from(new Set([...fallback, ...found]));
+    }
+
+    // 3. 403 Forbidden Fallback: Brute force scan for galattica_output_XXX.png
+    // since the server blocks directory listing.
+    console.warn("Directory listing blocked (403). Attempting brute-force scan...");
+    const scanned = [];
+    const scanPromises = [];
+    // Scan up to 50 files in parallel
+    for (let i = 1; i <= 50; i++) {
+        const filename = `galattica_output_${String(i).padStart(3, '0')}.png`;
+        if (fallback.includes(filename)) continue; // Skip already known
+        
+        scanPromises.push(
+            fetch(`sfondi/${filename}`, { method: 'HEAD' })
+                .then(r => { if(r.ok) scanned.push(filename); })
+                .catch(() => {})
+        );
+    }
+    await Promise.all(scanPromises);
     
-    if (found.length === 0) return fallback;
-    
-    // Merge with fallback and unique
-    const merged = Array.from(new Set([...fallback, ...found]));
-    console.log(`Found ${found.length} backgrounds dynamically. Total: ${merged.length}`);
-    return merged;
+    if (scanned.length > 0) {
+        console.log(`Brute-force scan found ${scanned.length} new files.`);
+        return Array.from(new Set([...fallback, ...scanned]));
+    }
+
+    return fallback;
   } catch (e) {
     console.warn("Could not fetch dynamic backgrounds, using fallback.", e);
     return fallback;
