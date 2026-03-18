@@ -40,7 +40,9 @@ export function buildSVG(state, opts){
   const fsDesc  = state.layout === 'ACCENDIAMO I MOTORI' 
     ? Math.round(W * (1 / 20)) // Larger for CTA
     : Math.round(W * sizeRatio.descrizione);
-  const fsLuogo = Math.round(W * sizeRatio.luogo);
+  const fsLuogo = state.layout === 'ACCENDIAMO I MOTORI' 
+    ? Math.round(W * sizeRatio.luogo * 0.8) // Slightly smaller for AITM
+    : Math.round(W * sizeRatio.luogo);
 
   // Line Heights (Use state.lineHeightMult if available, else CONFIG default - wait, state should have it now)
   // Ensure state.lineHeightMult is populated by applyOverrides in main.js
@@ -174,8 +176,9 @@ ${faceCSS}
   if (lTitle.length) blocks.push(hTitle);
   if (lSub.length) blocks.push(hSub);
   if (lDesc.length) blocks.push(hDesc);
-  if (lLuogo.length) blocks.push(hLuogo);
+  if (state.layout !== 'ACCENDIAMO I MOTORI' && lLuogo.length) blocks.push(hLuogo);
   if (hasQR) blocks.push(qrSize);
+  if (state.layout === 'ACCENDIAMO I MOTORI' && lLuogo.length) blocks.push(hLuogo);
 
   if (blocks.length > 0) {
     totalTextH = blocks.reduce((a, b) => a + b, 0) + (blocks.length - 1) * gap;
@@ -200,7 +203,7 @@ ${faceCSS}
   if (lTitle.length) { y += renderBlock(lTitle, 't-title', fsTitle, lhTitle, y); y += gap; }
   if (lSub.length) { y += renderBlock(lSub, 't-sub', fsSub, lhSub, y); y += gap; }
   if (lDesc.length) { y += renderBlock(lDesc, 't-desc', fsDesc, lhDesc, y); y += gap; }
-  if (lLuogo.length) { y += renderBlock(lLuogo, 't-luogo', fsLuogo, lhLuogo, y); y += gap; }
+  if (state.layout !== 'ACCENDIAMO I MOTORI' && lLuogo.length) { y += renderBlock(lLuogo, 't-luogo', fsLuogo, lhLuogo, y); y += gap; }
 
   // --- QR Code for "Campagna" layout ---
   if (hasQR) {
@@ -228,6 +231,8 @@ ${faceCSS}
     }
   }
 
+  if (state.layout === 'ACCENDIAMO I MOTORI' && lLuogo.length) { y += renderBlock(lLuogo, 't-luogo', fsLuogo, lhLuogo, y); y += gap; }
+
   // Remove final hLuogo check as it was moved up
 
   // --- Render Footer Logos centered in the bottom margin area, shifted towards center ---
@@ -249,12 +254,18 @@ ${faceCSS}
     const footerYStart = H - margins.bottom + Math.round(margins.bottom * 0.05);
     
     const isEventoPli = state.layout === 'EVENTO PLI';
+    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
     const isTargetFormat = (state.canvasW === 1080 && state.canvasH === 1440) || // PORTRAIT
                            (state.canvasW === 1080 && state.canvasH === 1920) || // STORIES
                            (state.canvasW === 2480 && state.canvasH === 3508) || // A4
                            (state.canvasW === 3508 && state.canvasH === 4961);   // A3
     
-    if (isEventoPli && isTargetFormat && hasInst && hasUser) {
+    if (isAitm) {
+      // ACCENDIAMO I MOTORI: No institutional logos, only user logos
+      if (hasUser) {
+        renderLogoRow(state.logos, hUser, footerYStart);
+      }
+    } else if (isEventoPli && isTargetFormat && hasInst && hasUser) {
       // Combine institutional and user logos in one row, institutional first
       const combinedRowH = Math.max(hInst, hUser);
       const combinedLogos = [state.institutionalLogo, ...state.logos];

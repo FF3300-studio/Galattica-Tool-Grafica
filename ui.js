@@ -60,9 +60,8 @@ export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
     add("descrizione", "Descrizione Eventuale", 3);
   } else if (layout === "ACCENDIAMO I MOTORI") {
     // ACCENDIAMO I MOTORI specific fields
-    add("titolo", "Claim Campagna", 2);
-    add("descrizione", "CTA", 3);
-    add("luogo", "Dov'è il nodo (Indirizzo nodo)", 2);
+    add("titolo", "Slogan della campagna", 2);
+    add("descrizione", "Invito all'azione", 3);
     
     add("qrLink", "Link QR Code", 1);
 
@@ -80,6 +79,8 @@ export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
     });
     inputsDiv.appendChild(qrL);
     inputsDiv.appendChild(qrS);
+
+    add("luogo", "Dov'è il nodo (Indirizzo nodo)", 2);
   }
 }
 
