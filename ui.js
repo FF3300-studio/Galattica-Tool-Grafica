@@ -24,6 +24,28 @@ export function buildSwatchGroup(root, palette, initialHex, onChange) {
     });
     root.appendChild(chip);
   });
+
+  // Add Random Button
+  const randomChip = document.createElement("div");
+  randomChip.className = "swatch-chip random-swatch";
+  randomChip.title = "Colore casuale";
+  const randomIcon = document.createElement("span");
+  randomIcon.className = "swatch-box random-icon";
+  randomIcon.textContent = "🎲";
+  randomChip.appendChild(randomIcon);
+  randomChip.addEventListener("click", () => {
+    const randomIndex = Math.floor(Math.random() * palette.length);
+    const randomColor = palette[randomIndex];
+    
+    // Find and click the corresponding chip to maintain consistency
+    const chips = root.querySelectorAll(".swatch-chip:not(.random-swatch)");
+    if (chips[randomIndex]) {
+        chips[randomIndex].click();
+    } else {
+        onChange(randomColor.hex);
+    }
+  });
+  root.appendChild(randomChip);
 }
 
 export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
@@ -85,6 +107,7 @@ export function buildSpacingSliders() {}
 
 export function buildBgSelector(container, bgFiles, onSelect) {
   container.innerHTML = "";
+  container.className = "bg-selector-container";
   
   // Create Custom Dropdown
   const wrapper = document.createElement("div");
@@ -170,6 +193,21 @@ export function buildBgSelector(container, bgFiles, onSelect) {
   wrapper.appendChild(selected);
   wrapper.appendChild(options);
   container.appendChild(wrapper);
+
+  // Add Random Button next to the selector
+  const randomBtn = document.createElement("button");
+  randomBtn.className = "random-bg-btn";
+  randomBtn.innerHTML = "🎲";
+  randomBtn.title = "Sfondo casuale";
+  randomBtn.addEventListener("click", () => {
+    if (bgFiles && bgFiles.length > 0) {
+        const randomIndex = Math.floor(Math.random() * bgFiles.length);
+        const randomFile = bgFiles[randomIndex];
+        const opt = Array.from(options.children).find(c => c.dataset.value === randomFile);
+        triggerSelect(randomFile, opt);
+    }
+  });
+  container.appendChild(randomBtn);
 
   return {
       setValue: (name) => {
