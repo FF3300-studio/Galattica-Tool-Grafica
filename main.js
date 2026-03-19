@@ -341,12 +341,14 @@ logoInput.addEventListener("change", async (e) => {
           url = await blobToDataURL(file);
       }
       const dim = await probeImage(url);
+      const w = dim.width || 100;
+      const h = dim.height || 100;
       state.logos.push({
         id: Date.now() + Math.random(),
         url: url,
-        w: dim.width,
-        h: dim.height,
-        ratio: dim.height / dim.width
+        w: w,
+        h: h,
+        ratio: h / w
       });
     } catch (err) {
       console.error(err);

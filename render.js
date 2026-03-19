@@ -239,7 +239,11 @@ ${faceCSS}
   const renderLogoRow = (logoList, rowH, rowYVal) => {
     const listGap = 40; 
     const maxLogoH = rowH * 0.9;
-    const processed = logoList.map(l => ({ ...l, finH: maxLogoH, finW: maxLogoH / l.ratio }));
+    // Guard against zero or null ratio
+    const processed = logoList.map(l => {
+        const r = (l && l.ratio && l.ratio > 0) ? l.ratio : 1;
+        return { ...l, finH: maxLogoH, finW: maxLogoH / r };
+    });
     const totalW = processed.reduce((acc, l) => acc + l.finW, 0) + (processed.length - 1) * listGap;
     let startX = cx - totalW / 2;
     const centerY = rowYVal + rowH / 2;
@@ -253,36 +257,14 @@ ${faceCSS}
     // Position it at the very top of the bottom margin area (closest to content)
     const footerYStart = H - margins.bottom + Math.round(margins.bottom * 0.05);
     
-    const isEventoPli = state.layout === 'EVENTO PLI';
-    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
-    const isTargetFormat = (state.canvasW === 1080 && state.canvasH === 1440) || // PORTRAIT
-                           (state.canvasW === 1080 && state.canvasH === 1920) || // STORIES
-                           (state.canvasW === 2480 && state.canvasH === 3508) || // A4
-                           (state.canvasW === 3508 && state.canvasH === 4961);   // A3
+    // Combine institutional and user logos in one row, institutional first
+    // This ensures they are always "next to each other" (accanto) per user feedback.
+    const combinedRowH = Math.max(hInst, hUser);
+    const combinedLogos = [];
+    if (hasInst) combinedLogos.push(state.institutionalLogo);
+    if (hasUser) combinedLogos.push(...state.logos);
     
-    if (isAitm) {
-      // ACCENDIAMO I MOTORI: Institutional logos ARE included now
-      if (hasInst && hasUser) {
-        // Combine institutional and user logos in one row, institutional first
-        const combinedRowH = Math.max(hInst, hUser);
-        const combinedLogos = [state.institutionalLogo, ...state.logos];
-        renderLogoRow(combinedLogos, combinedRowH, footerYStart);
-      } else if (hasUser) {
-        renderLogoRow(state.logos, hUser, footerYStart);
-      } else if (hasInst) {
-        renderLogoRow([state.institutionalLogo], hInst, footerYStart);
-      }
-    } else if (isEventoPli && isTargetFormat && hasInst && hasUser) {
-      // Combine institutional and user logos in one row, institutional first
-      const combinedRowH = Math.max(hInst, hUser);
-      const combinedLogos = [state.institutionalLogo, ...state.logos];
-      renderLogoRow(combinedLogos, combinedRowH, footerYStart);
-    } else if (hasUser) {
-      renderLogoRow(state.logos, hUser, footerYStart);
-      if (hasInst) renderLogoRow([state.institutionalLogo], hInst, footerYStart + hUser + logoGap);
-    } else if (hasInst) {
-      renderLogoRow([state.institutionalLogo], hInst, footerYStart);
-    }
+    renderLogoRow(combinedLogos, combinedRowH, footerYStart);
   }
 
   if (showGuides) {
