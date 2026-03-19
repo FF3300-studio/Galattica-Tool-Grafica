@@ -209,7 +209,7 @@ ${faceCSS}
   if (hasQR) {
     try {
       // @ts-ignore
-      const qr = qrcode(4, 'M');
+      const qr = qrcode(0, 'M');
       qr.addData(content.qrLink);
       qr.make();
       const moduleCount = qr.getModuleCount();
@@ -261,9 +261,16 @@ ${faceCSS}
                            (state.canvasW === 3508 && state.canvasH === 4961);   // A3
     
     if (isAitm) {
-      // ACCENDIAMO I MOTORI: No institutional logos, only user logos
-      if (hasUser) {
+      // ACCENDIAMO I MOTORI: Institutional logos ARE included now
+      if (hasInst && hasUser) {
+        // Combine institutional and user logos in one row, institutional first
+        const combinedRowH = Math.max(hInst, hUser);
+        const combinedLogos = [state.institutionalLogo, ...state.logos];
+        renderLogoRow(combinedLogos, combinedRowH, footerYStart);
+      } else if (hasUser) {
         renderLogoRow(state.logos, hUser, footerYStart);
+      } else if (hasInst) {
+        renderLogoRow([state.institutionalLogo], hInst, footerYStart);
       }
     } else if (isEventoPli && isTargetFormat && hasInst && hasUser) {
       // Combine institutional and user logos in one row, institutional first

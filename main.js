@@ -264,7 +264,7 @@ function buildSwatches() {
 // ----- Logo Handling -----
 async function updateInstitutionalLogo() {
   try {
-    if (state.institutionalLogoColor === 'none' || state.layout === 'ACCENDIAMO I MOTORI') {
+    if (state.institutionalLogoColor === 'none') {
       state.institutionalLogo = null;
       draw(true);
       return;
@@ -497,12 +497,13 @@ layoutSelect.addEventListener("change", () => {
   // Hide institutional logo color control for ACCENDIAMO I MOTORI
   if (institutionalLogoColorSelect) {
     const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
-    institutionalLogoColorSelect.style.display = isAitm ? 'none' : 'block';
+    // Logic to hide/show removed per user request to restore logos on AITM
+    institutionalLogoColorSelect.style.display = 'block';
     
-    // Also hide the label
+    // Also show the label
     const label = institutionalLogoColorSelect.previousElementSibling;
     if (label && label.tagName === 'LABEL') {
-      label.style.display = isAitm ? 'none' : 'block';
+      label.style.display = 'block';
     }
   }
 
@@ -654,11 +655,10 @@ let bgSelectorController = null;
 
   // Initial UI state for institutional logo color control
   if (institutionalLogoColorSelect) {
-    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
-    institutionalLogoColorSelect.style.display = isAitm ? 'none' : 'block';
+    institutionalLogoColorSelect.style.display = 'block';
     const label = institutionalLogoColorSelect.previousElementSibling;
     if (label && label.tagName === 'LABEL') {
-      label.style.display = isAitm ? 'none' : 'block';
+      label.style.display = 'block';
     }
   }
 
