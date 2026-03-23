@@ -34,7 +34,55 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
+            display: none; /* Hidden until authenticated */
         }
+
+        /* Authentication Overlay */
+        #authOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        #authOverlay .card {
+            width: 100%;
+            max-width: 400px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        #authOverlay h2 { margin-top: 0; font-size: 20px; color: var(--accent); }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        input[type="password"], input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--stroke);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: var(--accent); }
 
         header {
             display: flex;
@@ -52,12 +100,20 @@
             letter-spacing: -0.02em;
         }
 
+        .filter-bar {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+        }
+
         .card {
             background: var(--card);
             border-radius: var(--radius);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
             overflow: hidden;
             border: 1px solid var(--stroke);
+            padding: 0;
         }
 
         table {
@@ -104,7 +160,7 @@
         .badge-pdf { background: #FEF3C7; color: #92400E; }
 
         .btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 8px;
             font-weight: 600;
             font-size: 13px;
@@ -114,9 +170,12 @@
             font-family: inherit;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             text-decoration: none;
         }
+
+        .btn-block { width: 100%; }
 
         .btn-primary {
             background: var(--accent);
@@ -154,11 +213,6 @@
             color: var(--muted);
         }
 
-        .empty-state p {
-            margin: 0;
-            font-size: 16px;
-        }
-
         .footer-actions {
             margin-top: 24px;
             display: flex;
@@ -171,8 +225,36 @@
             color: var(--muted);
         }
 
+        /* Modal clearing */
+        #modalBackdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
         @media (max-width: 600px) {
             header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
             tr { border-bottom: 2px solid var(--stroke); padding: 16px 0; }
@@ -187,11 +269,33 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Auth Overlay -->
+    <div id="authOverlay">
+        <div class="card">
+            <h2>Accesso Riservato</h2>
+            <p class="muted" style="font-size: 14px; margin-bottom: 24px;">Inserisci la password per visualizzare i log delle esportazioni.</p>
+            <div class="form-group">
+                <input type="password" id="accessPass" placeholder="Password">
+            </div>
+            <button id="loginBtn" class="btn btn-primary btn-block">Entra</button>
+            <p id="authError" style="color: var(--danger); font-size: 12px; margin-top: 12px; display: none;">Password errata</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
         <header>
             <h1>Log Esportazioni</h1>
             <a href="index.html" class="btn btn-outline">← Torna allo strumento</a>
         </header>
+
+        <div class="filter-bar">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label>Filtra per Mese</label>
+                <select id="monthFilter">
+                    <option value="all">Tutti i mesi</option>
+                </select>
+            </div>
+        </div>
 
         <div class="card">
             <table id="logTable">
@@ -208,40 +312,133 @@
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state" style="display: none;">
-                <p>Nessuna esportazione registrata.</p>
+                <p>Nessuna esportazione trovata per il periodo selezionato.</p>
             </div>
         </div>
 
         <div class="footer-actions">
-            <div id="stats" class="muted"> Totale: 0 esportazioni </div>
+            <div id="stats" class="muted"> Caricamento... </div>
             <button id="clearLogBtn" class="btn btn-danger">Pulisci Log</button>
+        </div>
+    </div>
+
+    <!-- Modal Pulisci -->
+    <div id="modalBackdrop">
+        <div class="modal">
+            <h3 style="margin-top:0">Pulisci Cronologia</h3>
+            <p class="muted" style="font-size: 14px;">Inserisci la password per confermare la cancellazione definitiva di tutti i log sul server.</p>
+            <div class="form-group">
+                <input type="password" id="clearPass" placeholder="Password">
+            </div>
+            <div class="modal-actions">
+                <button id="cancelClearBtn" class="btn btn-outline" style="flex:1">Annulla</button>
+                <button id="confirmClearBtn" class="btn btn-danger" style="flex:1">Pulisci</button>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { getLogs, clearLogs } from "./log-export.js";
 
+        const AUTH_PASS = "Stelle&Galassie2026";
+        const authOverlay = document.getElementById("authOverlay");
+        const mainContainer = document.getElementById("mainContainer");
+        const loginBtn = document.getElementById("loginBtn");
+        const accessPass = document.getElementById("accessPass");
+        const authError = document.getElementById("authError");
+
         const logBody = document.getElementById("logBody");
         const emptyState = document.getElementById("emptyState");
         const logTable = document.getElementById("logTable");
         const stats = document.getElementById("stats");
         const clearBtn = document.getElementById("clearLogBtn");
+        const monthFilter = document.getElementById("monthFilter");
+
+        const modalBackdrop = document.getElementById("modalBackdrop");
+        const clearPass = document.getElementById("clearPass");
+        const confirmClearBtn = document.getElementById("confirmClearBtn");
+        const cancelClearBtn = document.getElementById("cancelClearBtn");
+
+        let allLogs = [];
+
+        // --- Auth Logic ---
+        function checkAuth() {
+            if (sessionStorage.getItem("galattica_auth") === "true") {
+                showContent();
+            }
+        }
+
+        function showContent() {
+            authOverlay.style.display = "none";
+            mainContainer.style.display = "block";
+            loadLogs();
+        }
+
+        loginBtn.onclick = () => {
+            if (accessPass.value === AUTH_PASS) {
+                sessionStorage.setItem("galattica_auth", "true");
+                showContent();
+            } else {
+                authError.style.display = "block";
+                accessPass.value = "";
+            }
+        };
+
+        accessPass.onkeydown = (e) => { if(e.key === 'Enter') loginBtn.click(); };
+
+        // --- Logging & Filtering ---
+        async function loadLogs() {
+            logBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Caricamento in corso...</td></tr>';
+            allLogs = await getLogs();
+            populateMonthFilter();
+            render();
+        }
+
+        function populateMonthFilter() {
+            const months = new Set();
+            allLogs.forEach(log => {
+                const date = new Date(log.timestamp);
+                const val = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                months.add(val);
+            });
+
+            // Sort months descending
+            const sortedMonths = Array.from(months).sort().reverse();
+            
+            const currentVal = monthFilter.value;
+            monthFilter.innerHTML = '<option value="all">Tutti i mesi</option>' + 
+                sortedMonths.map(m => {
+                    const [y, mm] = m.split('-');
+                    const label = new Date(y, mm - 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+                    return `<option value="${m}">${label.charAt(0).toUpperCase() + label.slice(1)}</option>`;
+                }).join("");
+            monthFilter.value = currentVal;
+        }
+
+        monthFilter.onchange = () => render();
 
         function render() {
-            const logs = getLogs().reverse(); // Show newest first
+            const selectedMonth = monthFilter.value;
+            const filtered = selectedMonth === "all" 
+                ? allLogs 
+                : allLogs.filter(log => {
+                    const d = new Date(log.timestamp);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    return val === selectedMonth;
+                });
             
-            if (logs.length === 0) {
+            if (filtered.length === 0) {
                 logTable.style.display = "none";
                 emptyState.style.display = "block";
-                stats.textContent = "Totale: 0 esportazioni";
+                stats.textContent = `Totale: 0 esportazioni`;
                 return;
             }
 
             logTable.style.display = "table";
             emptyState.style.display = "none";
-            stats.textContent = `Totale: ${logs.length} esportazioni`;
+            stats.textContent = `Totale: ${filtered.length} esportazioni`;
 
-            logBody.innerHTML = logs.map((log, index) => {
+            logBody.innerHTML = filtered.map((log, index) => {
                 const date = new Date(log.timestamp);
                 const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const timeStr = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
@@ -252,7 +449,7 @@
                         <td><strong>${escapeHtml(log.title)}</strong></td>
                         <td><span class="badge badge-${log.exportType}">${log.exportType.toUpperCase()}</span></td>
                         <td>
-                            <button class="btn btn-outline download-btn" data-index="${index}">
+                            <button class="btn btn-outline download-btn" data-id="${log.detailsFile || index}">
                                 Scarica JSON
                             </button>
                         </td>
@@ -260,16 +457,80 @@
                 `;
             }).join("");
 
-            // Add events to download buttons
+            // Download events
             document.querySelectorAll('.download-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const idx = parseInt(btn.dataset.index);
-                    const log = logs[idx];
-                    downloadJson(log.configuration, `preset_${log.title.replace(/\s+/g, '_')}_${log.timestamp.split('T')[0]}.json`);
+                btn.onclick = async () => {
+                    const id = btn.dataset.id;
+                    const log = allLogs.find(l => (l.detailsFile || allLogs.indexOf(l).toString()) === id);
+                    const originalText = btn.textContent;
+                    
+                    try {
+                        btn.textContent = "Caricamento...";
+                        btn.disabled = true;
+
+                        let config = log.configuration;
+                        if (!config && log.detailsFile) {
+                            const resp = await fetch(`logs/details/${log.detailsFile}`);
+                            if (!resp.ok) throw new Error("File non trovato sul server");
+                            config = await resp.json();
+                        }
+
+                        if (config) {
+                            downloadJson(config, `preset_${log.title.replace(/\s+/g, '_')}_${log.timestamp.split('T')[0]}.json`);
+                        }
+                    } catch (e) {
+                        alert("Errore: " + e.message);
+                    } finally {
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                    }
                 };
             });
         }
 
+        // --- Clearing Logic ---
+        clearBtn.onclick = () => {
+            modalBackdrop.style.display = "flex";
+            clearPass.value = "";
+            clearPass.focus();
+        };
+
+        cancelClearBtn.onclick = () => { modalBackdrop.style.display = "none"; };
+
+        confirmClearBtn.onclick = async () => {
+            const pass = clearPass.value;
+            if (!pass) return;
+
+            confirmClearBtn.disabled = true;
+            confirmClearBtn.textContent = "PULIZIA...";
+
+            try {
+                const resp = await fetch('delete-logs.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+
+                if (resp.ok) {
+                    clearLogs(); // Clear local cache too
+                    modalBackdrop.style.display = "none";
+                    loadLogs();
+                    alert("Tutti i log sono stati eliminati correttamente.");
+                } else {
+                    const err = await resp.json();
+                    alert("Errore: " + (err.error || "Impossibile eliminare i log"));
+                }
+            } catch (e) {
+                alert("Errore di connessione al server.");
+            } finally {
+                confirmClearBtn.disabled = false;
+                confirmClearBtn.textContent = "Pulisci";
+            }
+        };
+
+        clearPass.onkeydown = (e) => { if (e.key === 'Enter') confirmClearBtn.click(); };
+
+        // Helper functions
         function downloadJson(obj, filename) {
             const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
@@ -286,14 +547,7 @@
             return div.innerHTML;
         }
 
-        clearBtn.onclick = () => {
-            if (confirm("Sei sicuro di voler cancellare tutta la cronologia delle esportazioni?")) {
-                clearLogs();
-                render();
-            }
-        };
-
-        render();
+        checkAuth();
     </script>
 </body>
 </html>
