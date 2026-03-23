@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Esportazioni - Galattica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F0F4F8;
+            --card: #FFFFFF;
+            --ink: #111827;
+            --muted: #6B7280;
+            --accent: #0037A6;
+            --stroke: #E5E7EB;
+            --radius: 12px;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--stroke);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #F9FAFB;
+            text-align: left;
+            padding: 16px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--stroke);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--stroke);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #F9FAFB;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-png { background: #DBEAFE; color: #1E40AF; }
+        .badge-pdf { background: #FEF3C7; color: #92400E; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #002D8A;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--ink);
+            border: 1px solid var(--stroke);
+        }
+
+        .btn-outline:hover {
+            background: #F9FAFB;
+            border-color: #D1D5DB;
+        }
+
+        .btn-danger {
+            background: #FEE2E2;
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #FECACA;
+        }
+
+        .empty-state {
+            padding: 60px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .footer-actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timestamp {
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+        }
+
+        @media (max-width: 600px) {
+            header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border-bottom: 2px solid var(--stroke); padding: 16px 0; }
+            td { border: none; padding: 8px 16px; position: relative; padding-left: 40%; }
+            td:before { position: absolute; left: 16px; width: 35%; font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+            td:nth-of-type(1):before { content: "Data"; }
+            td:nth-of-type(2):before { content: "Titolo"; }
+            td:nth-of-type(3):before { content: "Formato"; }
+            td:nth-of-type(4):before { content: "Azioni"; }
+            td:last-child { padding-left: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Log Esportazioni</h1>
+            <a href="index.html" class="btn btn-outline">← Torna allo strumento</a>
+        </header>
+
+        <div class="card">
+            <table id="logTable">
+                <thead>
+                    <tr>
+                        <th>Data e Ora</th>
+                        <th>Titolo</th>
+                        <th>Formato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody">
+                    <!-- Logs injected here -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <p>Nessuna esportazione registrata.</p>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <div id="stats" class="muted"> Totale: 0 esportazioni </div>
+            <button id="clearLogBtn" class="btn btn-danger">Pulisci Log</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getLogs, clearLogs } from "./log-export.js";
+
+        const logBody = document.getElementById("logBody");
+        const emptyState = document.getElementById("emptyState");
+        const logTable = document.getElementById("logTable");
+        const stats = document.getElementById("stats");
+        const clearBtn = document.getElementById("clearLogBtn");
+
+        function render() {
+            const logs = getLogs().reverse(); // Show newest first
+            
+            if (logs.length === 0) {
+                logTable.style.display = "none";
+                emptyState.style.display = "block";
+                stats.textContent = "Totale: 0 esportazioni";
+                return;
+            }
+
+            logTable.style.display = "table";
+            emptyState.style.display = "none";
+            stats.textContent = `Totale: ${logs.length} esportazioni`;
+
+            logBody.innerHTML = logs.map((log, index) => {
+                const date = new Date(log.timestamp);
+                const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const timeStr = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <tr>
+                        <td class="timestamp">${dateStr} <br><small>${timeStr}</small></td>
+                        <td><strong>${escapeHtml(log.title)}</strong></td>
+                        <td><span class="badge badge-${log.exportType}">${log.exportType.toUpperCase()}</span></td>
+                        <td>
+                            <button class="btn btn-outline download-btn" data-index="${index}">
+                                Scarica JSON
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            // Add events to download buttons
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.dataset.index);
+                    const log = logs[idx];
+                    downloadJson(log.configuration, `preset_${log.title.replace(/\s+/g, '_')}_${log.timestamp.split('T')[0]}.json`);
+                };
+            });
+        }
+
+        function downloadJson(obj, filename) {
+            const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        clearBtn.onclick = () => {
+            if (confirm("Sei sicuro di voler cancellare tutta la cronologia delle esportazioni?")) {
+                clearLogs();
+                render();
+            }
+        };
+
+        render();
+    </script>
+</body>
+</html>

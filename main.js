@@ -11,6 +11,7 @@ import {
   prettyAspect
 } from "./ui.js";
 import { initPreset } from "./preset.js";
+import { addToLog } from "./log-export.js";
 
 async function fetchDynamicBackgrounds() {
   const fallback = CONFIG.background.files || [];
@@ -385,6 +386,9 @@ async function exportPNG() {
   link.download = getFileName("png");
   link.href = pngCanvas.toDataURL("image/png");
   link.click();
+  
+  // Log export
+  addToLog(state, "png");
 }
 
 async function exportPDF() {
@@ -424,6 +428,9 @@ async function exportPDF() {
     const imgData = canvasTmp.toDataURL('image/jpeg', 0.98); 
     doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
     doc.save(getFileName("pdf"));
+    
+    // Log export
+    addToLog(state, "pdf");
   } catch (e) {
     console.error("PDF Export failed:", e);
     alert("Errore esportazione PDF: " + e.message);
