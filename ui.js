@@ -70,7 +70,7 @@ export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
   
   // Inputs logic
   if (layout === "EVENTO PLI") {
-    add("data", "Data", 1);
+    add("data", "Data e Orario", 1);
     add("titolo", "Titolo Evento", 2);
     add("luogo", "Nome Luogo e Indirizzo", 2);
     add("sottotitolo", "Sottotitolo", 2);
