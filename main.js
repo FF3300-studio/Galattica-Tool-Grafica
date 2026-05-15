@@ -19,7 +19,7 @@ async function fetchDynamicBackgrounds() {
     // 1. Try to fetch a potential JSON manifest or script (list.php)
     // This is the cleanest way if the user can upload a small script.
     const jsonResp = await fetch("sfondi/list.php");
-    if (jsonResp.ok) {
+    if (jsonResp.ok && jsonResp.headers.get("content-type")?.includes("application/json")) {
         const data = await jsonResp.json();
         if (Array.isArray(data)) return Array.from(new Set([...fallback, ...data]));
     }
@@ -38,29 +38,6 @@ async function fetchDynamicBackgrounds() {
           }
         }
         if (found.length > 0) return Array.from(new Set([...fallback, ...found]));
-    }
-
-    // 3. 403 Forbidden Fallback: Brute force scan for galattica_output_XXX.png
-    // since the server blocks directory listing.
-    console.warn("Directory listing blocked (403). Attempting brute-force scan...");
-    const scanned = [];
-    const scanPromises = [];
-    // Scan up to 50 files in parallel
-    for (let i = 1; i <= 50; i++) {
-        const filename = `galattica_output_${String(i).padStart(3, '0')}.png`;
-        if (fallback.includes(filename)) continue; // Skip already known
-        
-        scanPromises.push(
-            fetch(`sfondi/${filename}`, { method: 'HEAD' })
-                .then(r => { if(r.ok) scanned.push(filename); })
-                .catch(() => {})
-        );
-    }
-    await Promise.all(scanPromises);
-    
-    if (scanned.length > 0) {
-        console.log(`Brute-force scan found ${scanned.length} new files.`);
-        return Array.from(new Set([...fallback, ...scanned]));
     }
 
     return fallback;
@@ -147,7 +124,7 @@ function applyOverrides(p) {
     state.bgMode = "fit";
   }
 
-  const disableLogos = p.overrides && p.overrides.disableLogos;
+  const disableLogos = (p.overrides && p.overrides.disableLogos) || state.layout === "OPPORTUNITÀ/STRUMENTI";
   if(topLogoControls) topLogoControls.style.display = disableLogos ? 'none' : 'block';
   if(bottomLogoControls) bottomLogoControls.style.display = disableLogos ? 'none' : 'block';
 
@@ -183,6 +160,7 @@ function setPageSize() {
   
   fitPreview();
   applyOverrides(p);
+  syncContentToLayout();
   rebuildInputs();
   updateInstitutionalLogo();
 }
@@ -190,47 +168,55 @@ function setPageSize() {
 function updatePageSizeOptions() {
   const currentLayout = state.layout;
   const options = pageSizeSelect.querySelectorAll("option");
+  let sizeChanged = false;
   
   options.forEach(opt => {
+    // Reset label for the 1080x1440 option first
+    if (opt.value === "1080x1440") {
+      opt.textContent = currentLayout === "OPPORTUNITÀ/STRUMENTI" 
+        ? "1080×1350 px (Portrait)" 
+        : "1080×1440 px (Portrait)";
+    }
+
     if (currentLayout === "ACCENDIAMO I MOTORI") {
-      // For ACCENDIAMO I MOTORI: social (1080x1440), story (1080x1920), A4, A3
       const allowed = ["1080x1440", "1080x1920", "A4", "A3"];
       opt.style.display = allowed.includes(opt.value) ? "block" : "none";
       
-      // If current selection is hidden, switch to a safe one
       if (pageSizeSelect.value === opt.value && opt.style.display === "none") {
         pageSizeSelect.value = "1080x1440";
-        setPageSize();
+        sizeChanged = true;
       }
     } else if (currentLayout === "OPPORTUNITÀ/STRUMENTI") {
-      // For OPPORTUNITÀ/STRUMENTI: cover-web and portrait (1080x1440)
       const allowed = ["1080x1440", "cover-web"];
       opt.style.display = allowed.includes(opt.value) ? "block" : "none";
 
       if (pageSizeSelect.value === opt.value && opt.style.display === "none") {
         pageSizeSelect.value = "1080x1440";
-        setPageSize();
+        sizeChanged = true;
       }
     } else {
-      // For EVENTO PLI: show all
       opt.style.display = "block";
     }
   });
+
+  if (sizeChanged) {
+      setPageSize();
+  }
 }
 
 // ----- Draw -----
 function draw(showGuides = true) {
   const p = currentPreset();
-  const disableLogos = p.overrides && p.overrides.disableLogos;
-
-  const effectiveState = { 
-      ...state,
-      canvasW: state.canvasW,
-      canvasH: state.canvasH,
-      logos: disableLogos ? [] : state.logos,
-      institutionalLogo: disableLogos ? null : state.institutionalLogo,
-      galatticaLogo: disableLogos ? 'none' : state.galatticaLogo
-  };
+    const disableLogos = (p.overrides && p.overrides.disableLogos) || state.layout === "OPPORTUNITÀ/STRUMENTI";
+  
+    const effectiveState = { 
+        ...state,
+        canvasW: state.canvasW,
+        canvasH: state.canvasH,
+        logos: disableLogos ? [] : state.logos,
+        institutionalLogo: disableLogos ? null : state.institutionalLogo,
+        galatticaLogo: disableLogos ? 'none' : state.galatticaLogo
+    };
 
   const svg = buildSVG(
     effectiveState,
@@ -263,6 +249,13 @@ function buildSwatches() {
   });
   buildSwatchGroup(textPicker, CONFIG.textPalette || CONFIG.palette, state.textColor, (hex) => {
     state.textColor = hex;
+
+    // Skip logo color sync for OPPORTUNITÀ/STRUMENTI
+    if (state.layout === "OPPORTUNITÀ/STRUMENTI") {
+        updateInstitutionalLogo();
+        return;
+    }
+
     const h = hex.toLowerCase();
 
     // Disable logo-sync logic for OPPORTUNITÀ/STRUMENTI
@@ -521,14 +514,48 @@ function updateUrlParam(val) {
   window.history.replaceState({}, '', url);
 }
 
+function syncContentToLayout() {
+  const p = currentPreset();
+  const layout = state.layout;
+  const visible = p.overrides && p.overrides.visibleFields;
+  
+  const allKeys = ["tag", "data", "titolo", "sottotitolo", "descrizione", "luogo", "qrLink"];
+  let keysToKeep = [];
+
+  if (visible) {
+    keysToKeep = visible;
+  } else if (layout === "ACCENDIAMO I MOTORI") {
+    keysToKeep = ["titolo", "descrizione", "qrLink", "luogo"];
+  } else {
+    // Default (EVENTO PLI)
+    keysToKeep = ["data", "titolo", "sottotitolo", "descrizione", "luogo"];
+  }
+
+  allKeys.forEach(k => {
+    if (!keysToKeep.includes(k)) {
+      state.content[k] = "";
+    }
+  });
+}
+
 layoutSelect.addEventListener("change", () => {
   state.layout = layoutSelect.value;
   updateUrlParam(state.layout);
-  updatePageSizeOptions();
-  applyOverrides(currentPreset());
   
-  // Logo visibility logic
+  // 1. Sync content (clear fields not present in the new layout)
+  syncContentToLayout();
+  
+  // 2. Update available sizes (might trigger setPageSize)
+  updatePageSizeOptions();
+  
+  // 3. Get the updated preset and apply it
   const p = currentPreset();
+  applyOverrides(p);
+  
+  // 4. Rebuild inputs once
+  rebuildInputs();
+
+  // Logo visibility logic update
   const disableLogos = p.overrides && p.overrides.disableLogos;
   if (institutionalLogoColorSelect) {
     institutionalLogoColorSelect.style.display = disableLogos ? 'none' : 'block';
@@ -538,7 +565,6 @@ layoutSelect.addEventListener("change", () => {
     }
   }
 
-  rebuildInputs();
   draw(true);
 });
 
@@ -671,8 +697,6 @@ let bgSelectorController = null;
   await preloadGalatticaLogos(state);
   await initDefaultLogo();
 
-  setPageSize();
-  
   // URL Param support
   const urlParams = new URLSearchParams(window.location.search);
   const layoutParam = urlParams.get('tipologia');
@@ -684,6 +708,8 @@ let bgSelectorController = null;
     if (layoutSelect) layoutSelect.value = "EVENTO PLI";
   }
 
+  setPageSize();
+  
   // Initial UI state for institutional logo color control
   if (institutionalLogoColorSelect) {
     institutionalLogoColorSelect.style.display = 'block';
@@ -694,6 +720,7 @@ let bgSelectorController = null;
   }
 
   updatePageSizeOptions();
+  syncContentToLayout();
   rebuildInputs();
   buildSwatches();
 
@@ -727,7 +754,8 @@ let bgSelectorController = null;
     rebuildSpacingSliders: buildSpacingSliders,
     initLogoControls: () => renderLogoList(),
     getFileName,
-    bgSelectorController
+    bgSelectorController,
+    syncContentToLayout
   });
 })();
 

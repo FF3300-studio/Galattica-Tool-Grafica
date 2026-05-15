@@ -201,6 +201,7 @@ export function buildBgSelector(container, bgFiles, onSelect) {
 
   // Add Random Button next to the selector
   const randomBtn = document.createElement("button");
+  randomBtn.type = "button";
   randomBtn.className = "random-bg-btn";
   randomBtn.innerHTML = "🎲";
   randomBtn.title = "Sfondo casuale";

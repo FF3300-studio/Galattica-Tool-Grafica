@@ -106,6 +106,7 @@ export function initPreset(ctx){
       }
 
       state.content = { ...state.content, ...(preset.content||{}) };
+      if (ctx.syncContentToLayout) ctx.syncContentToLayout();
       rebuildInputs();
 
       if (preset.bgColor) state.bgColor = preset.bgColor;

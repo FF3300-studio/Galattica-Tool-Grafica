@@ -13,10 +13,19 @@ export const CONFIG = {
     },
     "1080x1440-opportunita": {
       width: 1080,
-      height: 1440,
-      margins: { top: 200, right: 80, bottom: 200, left: 80 },
+      height: 1350,
+      margins: { top: 135, right: 111, bottom: 135, left: 111 },
       overrides: {
         visibleFields: ["tag", "titolo", "sottotitolo"],
+        sizeRatio: {
+          tag: 33 / 1080,
+          data: 33 / 1080,
+          titolo: 96 / 1080,
+          sottotitolo: 70 / 1080
+        },
+        spacingRatios: {
+          groupGap: 1 / 40
+        },
         labelOverrides: {
           tag: "TAG",
           titolo: "Titolo",
@@ -57,9 +66,8 @@ export const CONFIG = {
         spacingRatios: {
           groupGap: 7 / 686 // 7px gap
         },
-        visibleFields: ["tag", "titolo", "sottotitolo"],
+        visibleFields: ["titolo", "sottotitolo"],
         labelOverrides: {
-          tag: "TAG",
           titolo: "Titolo",
           sottotitolo: "Sottotitolo"
         },

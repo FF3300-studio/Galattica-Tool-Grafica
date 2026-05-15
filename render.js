@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { fontData } from './assets.js';
-import { wrapWithHardBreaks, escapeXML } from './wrap.js';
+import { wrapWithHardBreaks, escapeXML, measureTextWidth } from './wrap.js';
 
 export function buildSVG(state, opts){
   const { margins, sizeRatio, spacingRatio, logoParams, content, textColor, bgColor, showLogo,
@@ -35,6 +35,7 @@ export function buildSVG(state, opts){
   // Output updated logic dependent on state.lineHeightMult and state.spacingRatios
   // Font Sizes
   const fsData  = Math.round(W * sizeRatio.data);
+  const fsTag   = sizeRatio.tag ? Math.round(W * sizeRatio.tag) : fsData;
   const fsTitle = Math.round(W * sizeRatio.titolo);
   const fsSub   = Math.round(W * sizeRatio.sottotitolo);
   const fsDesc  = state.layout === 'ACCENDIAMO I MOTORI' 
@@ -54,13 +55,16 @@ export function buildSVG(state, opts){
   const lhDesc  = Math.round(fsDesc  * lhMult.desc);
   const lhLuogo = Math.round(fsLuogo * lhMult.luogo);
 
+  const isOppStr = state.layout === 'OPPORTUNITÀ/STRUMENTI';
+  const subWeight = (isOppStr || state.bgMode === 'cover' || state.bgMode === 'fit-v') ? 500 : 600;
+
   const parts = [];
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
   parts.push(`<style><![CDATA[
 ${faceCSS}
 .t-data  { font-family:'IBM Plex Sans', sans-serif; font-weight:500; fill:${textColor}; }
 .t-title { font-family:'IBM Plex Sans', sans-serif; font-weight:700; fill:${textColor}; }
-.t-sub   { font-family:'IBM Plex Sans', sans-serif; font-weight:${(state.bgMode === 'cover' || state.bgMode === 'fit-v') ? 500 : 600}; fill:${textColor}; } /* 500 for cover web */
+.t-sub   { font-family:'IBM Plex Sans', sans-serif; font-weight:${subWeight}; fill:${textColor}; } 
 .t-desc  { font-family:'IBM Plex Sans', sans-serif; font-weight:400; fill:${textColor}; }
 .t-luogo { font-family:'IBM Plex Sans', sans-serif; font-weight:700; fill:${textColor}; }
 .guide { fill:none; stroke:#00FFAA; stroke-width:2; stroke-dasharray: 4 4; }
@@ -109,7 +113,7 @@ ${faceCSS}
 
   const lData  = data ? wrapWithHardBreaks(data, wrapW, 'IBM Plex Sans', fsData, null, 500) : [];
   const lTitle = titolo ? wrapWithHardBreaks(titolo, wrapW, 'IBM Plex Sans', fsTitle, null, 700) : [];
-  const lSub   = sottotitolo ? wrapWithHardBreaks(sottotitolo, wrapW, 'IBM Plex Sans', fsSub, null, (state.bgMode === 'cover' || state.bgMode === 'fit-v') ? 500 : 600) : [];
+  const lSub   = sottotitolo ? wrapWithHardBreaks(sottotitolo, wrapW, 'IBM Plex Sans', fsSub, null, subWeight) : [];
   const lDesc  = descrizione ? wrapWithHardBreaks(descrizione, wrapW, 'IBM Plex Sans', fsDesc, null, 400) : [];
   const lLuogo = luogo ? wrapWithHardBreaks(luogo, wrapW, 'IBM Plex Sans', fsLuogo, null, 700) : [];
 
@@ -131,24 +135,30 @@ ${faceCSS}
 
   const renderTag = (tagText, yStart) => {
     if (!tagText) return 0;
-    const fs = fsData;
-    const paddingH = fs * 0.6;
-    const paddingV = fs * 0.3;
-    const borderRadius = fs * 0.3;
+    const fs = fsTag;
+    const paddingH = fs * 0.55; // Less horizontal padding
+    const paddingV = fs * 0.45; // More vertical padding
+    const borderRadius = fs * 0.4;
     
-    // Estimate width (simple heuristic for variable width fonts)
-    const charW = fs * 0.55; 
-    const textW = tagText.length * charW;
+    const textW = measureTextWidth(tagText, 'IBM Plex Sans', fs, null, 700);
     const rectW = textW + (paddingH * 2);
     const rectH = fs + (paddingV * 2);
     
     const x = state.textAlign === 'left' ? margins.left : cx - rectW/2;
-    const tx = state.textAlign === 'left' ? x + paddingH : cx;
-    const ty = yStart + rectH/2;
+    const tx = x + rectW / 2; 
+
+    // Color logic (updated per user request): 
+    // If global text is white: Black button, White text
+    // Otherwise: White button, Black text
+    const isWhiteText = textColor.toLowerCase() === '#ffffff' || textColor.toLowerCase() === '#fff';
+    const tagBoxColor = isWhiteText ? '#000000' : '#FFFFFF';
+    const tagTextColor = isWhiteText ? '#FFFFFF' : '#000000';
+    
+    const ty = yStart + rectH / 2; // Perfect mathematical center (removed tweak)
 
     parts.push(`<g class="tag-button">`);
-    parts.push(`<rect x="${x}" y="${yStart}" width="${rectW}" height="${rectH}" rx="${borderRadius}" ry="${borderRadius}" fill="${textColor}"/>`);
-    parts.push(`<text x="${tx}" y="${ty}" font-family="'IBM Plex Sans', sans-serif" font-weight="700" font-size="${fs}" fill="${bgColor}" text-anchor="${state.textAlign === 'left' ? 'start' : 'middle'}" dominant-baseline="central">${escapeXML(tagText)}</text>`);
+    parts.push(`<rect x="${x}" y="${yStart}" width="${rectW}" height="${rectH}" rx="${borderRadius}" ry="${borderRadius}" fill="${tagBoxColor}"/>`);
+    parts.push(`<text x="${tx}" y="${ty}" font-family="'IBM Plex Sans', sans-serif" font-weight="700" font-size="${fs}" fill="${tagTextColor}" text-anchor="middle" dominant-baseline="central">${escapeXML(tagText)}</text>`);
     parts.push(`</g>`);
     
     return rectH;
@@ -183,7 +193,7 @@ ${faceCSS}
   const hSub   = lSub.length ? lSub.length * lhSub : 0;
   const hDesc  = lDesc.length ? lDesc.length * lhDesc : 0;
   const hLuogo = lLuogo.length ? lLuogo.length * lhLuogo : 0;
-  const hTag   = content.tag ? (fsData + fsData * 0.6) : 0; // estimate for vertical space
+  const hTag   = content.tag ? (fsTag + fsTag * 0.7) : 0; // estimate for vertical space
 
   const hasQR = state.layout === 'ACCENDIAMO I MOTORI' && content.qrLink;
   const qrRatios = [0.08, 0.12, 0.16, 0.20];
