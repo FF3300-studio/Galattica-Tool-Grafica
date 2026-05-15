@@ -16,11 +16,13 @@ export const CONFIG = {
       height: 1440,
       margins: { top: 200, right: 80, bottom: 200, left: 80 },
       overrides: {
-        visibleFields: ["titolo", "sottotitolo"],
+        visibleFields: ["tag", "titolo", "sottotitolo"],
         labelOverrides: {
+          tag: "TAG",
           titolo: "Titolo",
           sottotitolo: "Sottotitolo"
         },
+        textAlign: "left",
         disableLogos: true
       }
     },
@@ -55,8 +57,9 @@ export const CONFIG = {
         spacingRatios: {
           groupGap: 7 / 686 // 7px gap
         },
-        visibleFields: ["titolo", "sottotitolo"],
+        visibleFields: ["tag", "titolo", "sottotitolo"],
         labelOverrides: {
+          tag: "TAG",
           titolo: "Titolo",
           sottotitolo: "Sottotitolo"
         },

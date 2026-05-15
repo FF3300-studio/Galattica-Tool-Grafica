@@ -72,6 +72,9 @@ export function setInputs(state, inputsDiv, onChange, visibleFields = null, labe
   
   // Inputs logic
   if (layout === "EVENTO PLI" || layout === "OPPORTUNITÀ/STRUMENTI") {
+    if (layout === "OPPORTUNITÀ/STRUMENTI") {
+      add("tag", "TAG", 1);
+    }
     add("data", "Data e Orario", 1);
     add("titolo", "Titolo Evento", 2);
     add("luogo", "Nome Luogo e Indirizzo", 2);

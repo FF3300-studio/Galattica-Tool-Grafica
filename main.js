@@ -103,7 +103,7 @@ const main = document.querySelector("main");
 
 // ----- Stato -----
 const state = {
-  content: { data:"", titolo:"", sottotitolo:"", descrizione:"", luogo:"", qrLink:"" },
+  content: { tag:"", data:"", titolo:"", sottotitolo:"", descrizione:"", luogo:"", qrLink:"" },
   canvasW: 1080,
   canvasH: 1440,
   bgColor: CONFIG.background.defaultColor,
@@ -115,6 +115,7 @@ const state = {
   margins: { ...CONFIG.pagePresets["1080x1440"].margins },
   sizeRatio: { ...CONFIG.typography.baseRatios },
   layout: "evento",
+  textAlign: "center",
   galatticaLogo: "black",
   institutionalLogoColor: "black",
   galatticaLogos: {},
@@ -128,6 +129,7 @@ function applyOverrides(p) {
   state.sizeRatio = { ...CONFIG.typography.baseRatios };
   state.lineHeightMult = { ...CONFIG.typography.lineHeightMult };
   state.spacingRatios = { ...CONFIG.typography.spacingRatios };
+  state.textAlign = "center"; // Reset to default
 
   if (p.overrides) {
     if (p.overrides.sizeRatio) {
@@ -140,6 +142,7 @@ function applyOverrides(p) {
       state.spacingRatios = { ...state.spacingRatios, ...p.overrides.spacingRatios };
     }
     state.bgMode = p.overrides.bgMode || "fit";
+    state.textAlign = p.overrides.textAlign || "center";
   } else {
     state.bgMode = "fit";
   }
@@ -261,18 +264,24 @@ function buildSwatches() {
   buildSwatchGroup(textPicker, CONFIG.textPalette || CONFIG.palette, state.textColor, (hex) => {
     state.textColor = hex;
     const h = hex.toLowerCase();
-    if (h === '#ffffff' || h === '#fff') {
-       state.galatticaLogo = 'white';
-       if(galatticaLogoSelect) galatticaLogoSelect.value = 'white';
-       state.institutionalLogoColor = 'white';
-       if(institutionalLogoColorSelect) institutionalLogoColorSelect.value = 'white';
-    } else if (h === '#000000' || h === '#000') {
-       state.galatticaLogo = 'black';
-       if(galatticaLogoSelect) galatticaLogoSelect.value = 'black';
-       state.institutionalLogoColor = 'black';
-       if(institutionalLogoColorSelect) institutionalLogoColorSelect.value = 'black';
+
+    // Disable logo-sync logic for OPPORTUNITÀ/STRUMENTI
+    if (state.layout !== 'OPPORTUNITÀ/STRUMENTI') {
+      if (h === '#ffffff' || h === '#fff') {
+         state.galatticaLogo = 'white';
+         if(galatticaLogoSelect) galatticaLogoSelect.value = 'white';
+         state.institutionalLogoColor = 'white';
+         if(institutionalLogoColorSelect) institutionalLogoColorSelect.value = 'white';
+      } else if (h === '#000000' || h === '#000') {
+         state.galatticaLogo = 'black';
+         if(galatticaLogoSelect) galatticaLogoSelect.value = 'black';
+         state.institutionalLogoColor = 'black';
+         if(institutionalLogoColorSelect) institutionalLogoColorSelect.value = 'black';
+      }
+      updateInstitutionalLogo();
+    } else {
+      draw(true);
     }
-    updateInstitutionalLogo();
   });
 }
 
@@ -516,17 +525,16 @@ layoutSelect.addEventListener("change", () => {
   state.layout = layoutSelect.value;
   updateUrlParam(state.layout);
   updatePageSizeOptions();
+  applyOverrides(currentPreset());
   
-  // Hide institutional logo color control for ACCENDIAMO I MOTORI
+  // Logo visibility logic
+  const p = currentPreset();
+  const disableLogos = p.overrides && p.overrides.disableLogos;
   if (institutionalLogoColorSelect) {
-    const isAitm = state.layout === 'ACCENDIAMO I MOTORI';
-    // Logic to hide/show removed per user request to restore logos on AITM
-    institutionalLogoColorSelect.style.display = 'block';
-    
-    // Also show the label
+    institutionalLogoColorSelect.style.display = disableLogos ? 'none' : 'block';
     const label = institutionalLogoColorSelect.previousElementSibling;
     if (label && label.tagName === 'LABEL') {
-      label.style.display = 'block';
+      label.style.display = disableLogos ? 'none' : 'block';
     }
   }
 

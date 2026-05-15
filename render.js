@@ -113,25 +113,48 @@ ${faceCSS}
   const lDesc  = descrizione ? wrapWithHardBreaks(descrizione, wrapW, 'IBM Plex Sans', fsDesc, null, 400) : [];
   const lLuogo = luogo ? wrapWithHardBreaks(luogo, wrapW, 'IBM Plex Sans', fsLuogo, null, 700) : [];
 
+  const textAnchor = state.textAlign === 'left' ? 'start' : 'middle';
+  const xPos = state.textAlign === 'left' ? margins.left : cx;
+
   // Helper to render text block
   const renderBlock = (lines, cls, fs, lh, yStart) => {
     if (!lines || !lines.length) return 0;
     const blockH = lines.length * lh;
-    // Use dominant-baseline="central" for best vertical centering of caps/mixed text
-    // yStart is top of block. Line center is at yStart + i*lh + lh/2
-    parts.push(`<text class="${cls}" font-size="${fs}" text-anchor="middle" dominant-baseline="central">`);
+    parts.push(`<text class="${cls}" font-size="${fs}" text-anchor="${textAnchor}" dominant-baseline="central">`);
     lines.forEach((line, i) => {
       const lineY = yStart + (i * lh) + (lh / 2);
-      parts.push(`<tspan x="${cx}" y="${lineY}">${line === '' ? '&#160;' : escapeXML(line)}</tspan>`);
+      parts.push(`<tspan x="${xPos}" y="${lineY}">${line === '' ? '&#160;' : escapeXML(line)}</tspan>`);
     });
     parts.push(`</text>`);
     return blockH;
   };
 
-  // Measure content total height to center it vertically (excluding logos/footer maybe?)
-  // Stack: Data -gap- Title -gap- Sub -gap- Desc -gap- Luogo
-  // Footer: [Optionally User Logos] -> [Institutional Logo (Always)]
+  const renderTag = (tagText, yStart) => {
+    if (!tagText) return 0;
+    const fs = fsData;
+    const paddingH = fs * 0.6;
+    const paddingV = fs * 0.3;
+    const borderRadius = fs * 0.3;
+    
+    // Estimate width (simple heuristic for variable width fonts)
+    const charW = fs * 0.55; 
+    const textW = tagText.length * charW;
+    const rectW = textW + (paddingH * 2);
+    const rectH = fs + (paddingV * 2);
+    
+    const x = state.textAlign === 'left' ? margins.left : cx - rectW/2;
+    const tx = state.textAlign === 'left' ? x + paddingH : cx;
+    const ty = yStart + rectH/2;
 
+    parts.push(`<g class="tag-button">`);
+    parts.push(`<rect x="${x}" y="${yStart}" width="${rectW}" height="${rectH}" rx="${borderRadius}" ry="${borderRadius}" fill="${textColor}"/>`);
+    parts.push(`<text x="${tx}" y="${ty}" font-family="'IBM Plex Sans', sans-serif" font-weight="700" font-size="${fs}" fill="${bgColor}" text-anchor="${state.textAlign === 'left' ? 'start' : 'middle'}" dominant-baseline="central">${escapeXML(tagText)}</text>`);
+    parts.push(`</g>`);
+    
+    return rectH;
+  };
+
+  // Measure content total height
   // Header Setup (Galattica Logo)
   const galatticaKey = state.galatticaLogo;
   const hasHeaderLogo = galatticaKey && galatticaKey !== 'none' && state.galatticaLogos && state.galatticaLogos[galatticaKey];
@@ -141,29 +164,26 @@ ${faceCSS}
   const hasUser = state.logos.length > 0;
 
   // Header/Footer are now positioned INSIDE the margins to save space
-  // We cap logo heights to fits comfortably in margins
-  const maxHHeader = Math.round(margins.top * 0.85); // Increased to 85% of margin
-  const maxHInst = Math.round(margins.bottom * 0.70); // Increased to 70% of margin
-  const maxHUser = Math.round(margins.bottom * 0.60); // Increased to 60% of margin
+  const maxHHeader = Math.round(margins.top * 0.85);
+  const maxHInst = Math.round(margins.bottom * 0.70);
+  const maxHUser = Math.round(margins.bottom * 0.60);
 
   const hHeaderLogo = hasHeaderLogo ? Math.min(Math.round(H * 0.11), maxHHeader) : 0; 
   const hInst = hasInst ? Math.min(Math.round(H * 0.14), maxHInst) : 0;
   const hUser = hasUser ? Math.min(Math.round(H * 0.10), maxHUser) : 0; 
-  const logoGap = Math.round(H * 0.015);
   
-  // Available height for text is precisely the contentH area (between margins)
   const availableH = contentH;
   
-  // Use spacingRatios from state if available, or fallback to sizeRatio (legacy) or default
   const spRatios = state.spacingRatios || {};
   const gapRatio = spRatios.groupGap || sizeRatio.groupGap || (20/W);
   const gap = Math.round(W * gapRatio);
-  
+
   const hData  = lData.length ? lData.length * lhData : 0;
   const hTitle = lTitle.length ? lTitle.length * lhTitle : 0;
   const hSub   = lSub.length ? lSub.length * lhSub : 0;
   const hDesc  = lDesc.length ? lDesc.length * lhDesc : 0;
   const hLuogo = lLuogo.length ? lLuogo.length * lhLuogo : 0;
+  const hTag   = content.tag ? (fsData + fsData * 0.6) : 0; // estimate for vertical space
 
   const hasQR = state.layout === 'ACCENDIAMO I MOTORI' && content.qrLink;
   const qrRatios = [0.08, 0.12, 0.16, 0.20];
@@ -172,6 +192,7 @@ ${faceCSS}
 
   let totalTextH = 0;
   const blocks = [];
+  if (content.tag) blocks.push(hTag);
   if (lData.length) blocks.push(hData);
   if (lTitle.length) blocks.push(hTitle);
   if (lSub.length) blocks.push(hSub);
@@ -200,6 +221,7 @@ ${faceCSS}
   }
 
   if (lData.length) { y += renderBlock(lData, 't-data', fsData, lhData, y); y += gap; }
+  if (content.tag) { y += renderTag(content.tag, y); y += gap; }
   if (lTitle.length) { y += renderBlock(lTitle, 't-title', fsTitle, lhTitle, y); y += gap; }
   if (lSub.length) { y += renderBlock(lSub, 't-sub', fsSub, lhSub, y); y += gap; }
   if (lDesc.length) { y += renderBlock(lDesc, 't-desc', fsDesc, lhDesc, y); y += gap; }
