@@ -160,7 +160,11 @@ function applyOverrides(p) {
 
 // ----- Init dimensioni -----
 function currentPreset() {
-  return CONFIG.pagePresets[pageSizeSelect.value];
+  const val = pageSizeSelect.value;
+  if (state.layout === "OPPORTUNITÀ/STRUMENTI" && val === "1080x1440") {
+    return CONFIG.pagePresets["1080x1440-opportunita"];
+  }
+  return CONFIG.pagePresets[val];
 }
 function setPageSize() {
   const p = currentPreset();
@@ -191,6 +195,15 @@ function updatePageSizeOptions() {
       opt.style.display = allowed.includes(opt.value) ? "block" : "none";
       
       // If current selection is hidden, switch to a safe one
+      if (pageSizeSelect.value === opt.value && opt.style.display === "none") {
+        pageSizeSelect.value = "1080x1440";
+        setPageSize();
+      }
+    } else if (currentLayout === "OPPORTUNITÀ/STRUMENTI") {
+      // For OPPORTUNITÀ/STRUMENTI: cover-web and portrait (1080x1440)
+      const allowed = ["1080x1440", "cover-web"];
+      opt.style.display = allowed.includes(opt.value) ? "block" : "none";
+
       if (pageSizeSelect.value === opt.value && opt.style.display === "none") {
         pageSizeSelect.value = "1080x1440";
         setPageSize();
@@ -236,7 +249,8 @@ function draw(showGuides = true) {
 function rebuildInputs() {
   const p = currentPreset();
   const visibleFields = p.overrides ? p.overrides.visibleFields : null;
-  setInputs(state, inputsDiv, () => draw(true), visibleFields);
+  const labelOverrides = p.overrides ? p.overrides.labelOverrides : null;
+  setInputs(state, inputsDiv, () => draw(true), visibleFields, labelOverrides);
 }
 
 function buildSwatches() {
@@ -654,7 +668,7 @@ let bgSelectorController = null;
   // URL Param support
   const urlParams = new URLSearchParams(window.location.search);
   const layoutParam = urlParams.get('tipologia');
-  if (layoutParam === 'ACCENDIAMO I MOTORI' || layoutParam === 'EVENTO PLI') {
+  if (layoutParam === 'ACCENDIAMO I MOTORI' || layoutParam === 'EVENTO PLI' || layoutParam === 'OPPORTUNITÀ/STRUMENTI') {
     state.layout = layoutParam;
     if (layoutSelect) layoutSelect.value = layoutParam;
   } else {

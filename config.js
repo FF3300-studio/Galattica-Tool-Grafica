@@ -11,6 +11,19 @@ export const CONFIG = {
         }
       }
     },
+    "1080x1440-opportunita": {
+      width: 1080,
+      height: 1440,
+      margins: { top: 200, right: 80, bottom: 200, left: 80 },
+      overrides: {
+        visibleFields: ["titolo", "sottotitolo"],
+        labelOverrides: {
+          titolo: "Titolo",
+          sottotitolo: "Sottotitolo"
+        },
+        disableLogos: true
+      }
+    },
     "1080x1920": {
       width: 1080,
       height: 1920,
@@ -36,15 +49,18 @@ export const CONFIG = {
           sottotitolo: 38 / 686
         },
         lineHeightMult: {
-          title: 1.0,  // 50px/50px
-          sub: 0.95    // 36px/38px
+          title: 1.1,
+          sub: 1.05
         },
         spacingRatios: {
           groupGap: 7 / 686 // 7px gap
         },
         visibleFields: ["titolo", "sottotitolo"],
+        labelOverrides: {
+          titolo: "Titolo",
+          sottotitolo: "Sottotitolo"
+        },
         disableLogos: true,
-        disableLayoutSelect: true,
         bgMode: "fit-v" // Force vertical fit
       }
     },

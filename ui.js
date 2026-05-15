@@ -48,15 +48,17 @@ export function buildSwatchGroup(root, palette, initialHex, onChange) {
   root.appendChild(randomChip);
 }
 
-export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
+export function setInputs(state, inputsDiv, onChange, visibleFields = null, labelOverrides = null) {
   const { layout, content } = state;
   inputsDiv.innerHTML = "";
   const add = (key, label, rows=2) => {
     // If visibleFields is provided, skip if key is not in it
     if (visibleFields && !visibleFields.includes(key)) return;
 
+    const finalLabel = (labelOverrides && labelOverrides[key]) ? labelOverrides[key] : label;
+
     const l = document.createElement("label");
-    l.textContent = label;
+    l.textContent = finalLabel;
     const ta = document.createElement("textarea");
     ta.rows = rows;
     ta.value = content[key] || "";
@@ -69,7 +71,7 @@ export function setInputs(state, inputsDiv, onChange, visibleFields = null) {
   };
   
   // Inputs logic
-  if (layout === "EVENTO PLI") {
+  if (layout === "EVENTO PLI" || layout === "OPPORTUNITÀ/STRUMENTI") {
     add("data", "Data e Orario", 1);
     add("titolo", "Titolo Evento", 2);
     add("luogo", "Nome Luogo e Indirizzo", 2);
