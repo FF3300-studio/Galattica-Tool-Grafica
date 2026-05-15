@@ -101,6 +101,45 @@ const state = {
   qrSizeRatioIndex: 1, // Default index for QR size (20%)
 };
 
+const STATE_KEY = "galattica_tool_state";
+
+function saveState() {
+  const toSave = {
+    layout: state.layout,
+    bgColor: state.bgColor,
+    textColor: state.textColor,
+    content: state.content,
+    galatticaLogo: state.galatticaLogo,
+    institutionalLogoColor: state.institutionalLogoColor
+  };
+  localStorage.setItem(STATE_KEY, JSON.stringify(toSave));
+}
+
+function loadState() {
+  const saved = localStorage.getItem(STATE_KEY);
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    if (data.layout) {
+        state.layout = data.layout;
+        if (layoutSelect) layoutSelect.value = data.layout;
+    }
+    if (data.bgColor) state.bgColor = data.bgColor;
+    if (data.textColor) state.textColor = data.textColor;
+    if (data.content) state.content = { ...state.content, ...data.content };
+    if (data.galatticaLogo) {
+        state.galatticaLogo = data.galatticaLogo;
+        if (galatticaLogoSelect) galatticaLogoSelect.value = data.galatticaLogo;
+    }
+    if (data.institutionalLogoColor) {
+        state.institutionalLogoColor = data.institutionalLogoColor;
+        if (institutionalLogoColorSelect) institutionalLogoColorSelect.value = data.institutionalLogoColor;
+    }
+  } catch (e) {
+    console.warn("Could not load state from localStorage", e);
+  }
+}
+
 // Override Helper
 function applyOverrides(p) {
   state.sizeRatio = { ...CONFIG.typography.baseRatios };
@@ -206,6 +245,7 @@ function updatePageSizeOptions() {
 
 // ----- Draw -----
 function draw(showGuides = true) {
+  saveState();
   const p = currentPreset();
     const disableLogos = (p.overrides && p.overrides.disableLogos) || state.layout === "OPPORTUNITÀ/STRUMENTI";
   
@@ -696,7 +736,7 @@ let bgSelectorController = null;
   await preloadFontsForPreview();
   await preloadGalatticaLogos(state);
   await initDefaultLogo();
-
+  loadState();
   // URL Param support
   const urlParams = new URLSearchParams(window.location.search);
   const layoutParam = urlParams.get('tipologia');
@@ -755,7 +795,9 @@ let bgSelectorController = null;
     initLogoControls: () => renderLogoList(),
     getFileName,
     bgSelectorController,
-    syncContentToLayout
+    syncContentToLayout,
+    updatePageSizeOptions,
+    updateUrlParam
   });
 })();
 

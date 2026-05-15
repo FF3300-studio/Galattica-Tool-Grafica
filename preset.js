@@ -89,6 +89,13 @@ export function initPreset(ctx){
 
     console.debug('[Preset] applyPreset start', preset);
     try{
+      if (preset.layout){
+        state.layout = preset.layout;
+        if (layoutSelect) layoutSelect.value = preset.layout;
+        if (ctx.updateUrlParam) ctx.updateUrlParam(preset.layout);
+        if (ctx.updatePageSizeOptions) ctx.updatePageSizeOptions();
+      }
+
       let pageSize = preset.pageSize;
       // Migration: Handle old 1080x1350 format
       if (pageSize === "1080x1350") {
@@ -99,10 +106,6 @@ export function initPreset(ctx){
       if (pageSize && CONFIG.pagePresets?.[pageSize]){
         pageSizeSelect.value = pageSize;
         setPageSize();
-      }
-      if (preset.layout){
-        layoutSelect.value = preset.layout;
-        state.layout = preset.layout;
       }
 
       state.content = { ...state.content, ...(preset.content||{}) };
