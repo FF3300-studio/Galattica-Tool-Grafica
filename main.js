@@ -850,7 +850,7 @@ function generateRandomCustomBg() {
       ss: ss,
       color: chosenColors[i],
       opacity: 1.0,
-      blendMode: Math.random() < 0.25 ? "multiply" : "normal"
+      blendMode: "normal"
     });
   }
   
@@ -1074,25 +1074,6 @@ window.updateCustomBgSummary = updateCustomBgSummary;
           <label>Colore del Livello</label>
           <div class="modal-swatches-grid"></div>
         </div>
-        
-        <div class="layer-extra-row">
-          <div class="slider-group">
-            <div class="slider-val-header">
-              <label>Opacità</label>
-              <span class="opacity-val">${Math.round(layer.opacity * 100)}%</span>
-            </div>
-            <input type="range" class="layer-opacity-slider" min="0" max="1" step="0.05" value="${layer.opacity}" />
-          </div>
-          <div>
-            <label>Blend Mode</label>
-            <select class="layer-blend-select">
-              <option value="normal" ${layer.blendMode === 'normal' ? 'selected' : ''}>Normale</option>
-              <option value="multiply" ${layer.blendMode === 'multiply' ? 'selected' : ''}>Moltiplica</option>
-              <option value="screen" ${layer.blendMode === 'screen' ? 'selected' : ''}>Schiarisci</option>
-              <option value="overlay" ${layer.blendMode === 'overlay' ? 'selected' : ''}>Sovrapponi</option>
-            </select>
-          </div>
-        </div>
       `;
       
       card.querySelector(".move-up").addEventListener("click", () => {
@@ -1128,19 +1109,6 @@ window.updateCustomBgSummary = updateCustomBgSummary;
       
       card.querySelector(".layer-ss-select").addEventListener("change", (e) => {
         layer.ss = e.target.value;
-        updateModalPreview();
-      });
-      
-      card.querySelector(".layer-blend-select").addEventListener("change", (e) => {
-        layer.blendMode = e.target.value;
-        updateModalPreview();
-      });
-      
-      const opacitySlider = card.querySelector(".layer-opacity-slider");
-      opacitySlider.addEventListener("input", (e) => {
-        const val = parseFloat(e.target.value);
-        layer.opacity = val;
-        card.querySelector(".opacity-val").textContent = `${Math.round(val * 100)}%`;
         updateModalPreview();
       });
       
