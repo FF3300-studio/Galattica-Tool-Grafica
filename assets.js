@@ -4,6 +4,7 @@ export const FONT_FILES = [
   { id: 'ibm-400', family: 'IBM Plex Sans', url: 'https://fonts.gstatic.com/s/ibmplexsans/v23/zYXGKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1swZSAXcomDVmadSD6llzAA.ttf', fmt: 'truetype', weight: '400' },
   { id: 'ibm-500', family: 'IBM Plex Sans', url: 'https://fonts.gstatic.com/s/ibmplexsans/v23/zYXGKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1swZSAXcomDVmadSD2FlzAA.ttf', fmt: 'truetype', weight: '500' },
   { id: 'ibm-700', family: 'IBM Plex Sans', url: 'https://fonts.gstatic.com/s/ibmplexsans/v23/zYXGKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1swZSAXcomDVmadSDDV5zAA.ttf', fmt: 'truetype', weight: '700' },
+  { id: 'galattica-gen', family: 'GalatticaGen', url: 'galattica-test-Regular.ttf', fmt: 'truetype', weight: '400' }
 ];
 
 const fontData = new Map();

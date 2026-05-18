@@ -99,6 +99,9 @@ const state = {
   zoom: 1,
   pan: { x: 0, y: 0 },
   qrSizeRatioIndex: 1, // Default index for QR size (20%)
+  customBgActive: false,
+  customBgLayers: [],
+  customBgFit: "cover"
 };
 
 const STATE_KEY = "galattica_tool_state";
@@ -110,7 +113,10 @@ function saveState() {
     textColor: state.textColor,
     content: state.content,
     galatticaLogo: state.galatticaLogo,
-    institutionalLogoColor: state.institutionalLogoColor
+    institutionalLogoColor: state.institutionalLogoColor,
+    customBgActive: state.customBgActive,
+    customBgLayers: state.customBgLayers,
+    customBgFit: state.customBgFit
   };
   localStorage.setItem(STATE_KEY, JSON.stringify(toSave));
 }
@@ -134,6 +140,15 @@ function loadState() {
     if (data.institutionalLogoColor) {
         state.institutionalLogoColor = data.institutionalLogoColor;
         if (institutionalLogoColorSelect) institutionalLogoColorSelect.value = data.institutionalLogoColor;
+    }
+    if (typeof data.customBgActive !== 'undefined') {
+        state.customBgActive = !!data.customBgActive;
+    }
+    if (data.customBgLayers) {
+        state.customBgLayers = data.customBgLayers;
+    }
+    if (data.customBgFit) {
+        state.customBgFit = data.customBgFit;
     }
   } catch (e) {
     console.warn("Could not load state from localStorage", e);
@@ -243,8 +258,39 @@ function updatePageSizeOptions() {
   }
 }
 
+function getGlyphCenterY(letter, ss) {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 10;
+    canvas.height = 10;
+    const ctx = canvas.getContext("2d");
+    ctx.font = "1000px 'GalatticaGen'";
+    if (ctx.fontFeatureSettings !== undefined) {
+      ctx.fontFeatureSettings = `'${ss}' 1`;
+    }
+    const metrics = ctx.measureText ? ctx.measureText(letter) : null;
+    if (metrics && metrics.actualBoundingBoxAscent !== undefined) {
+      const ascent = metrics.actualBoundingBoxAscent;
+      const descent = metrics.actualBoundingBoxDescent;
+      if (ascent === 0 && descent === 0) {
+        return 800; // Fallback if font not yet loaded
+      }
+      return 500 + (ascent - descent) / 2;
+    }
+    return 800; // Safe default fallback
+  } catch (e) {
+    console.warn("[Measure] Canvas measure failed:", e);
+    return 800;
+  }
+}
+
 // ----- Draw -----
 function draw(showGuides = true) {
+  if (state.customBgActive) {
+    const layers = state.customBgLayers || [];
+    const firstLayer = layers[0] || { letter: 'A', ss: 'ss02' };
+    state.customBgY = getGlyphCenterY(firstLayer.letter, firstLayer.ss);
+  }
   saveState();
   const p = currentPreset();
     const disableLogos = (p.overrides && p.overrides.disableLogos) || state.layout === "OPPORTUNITÀ/STRUMENTI";
@@ -720,11 +766,434 @@ let bgSelectorController = null;
     }
   }, { passive: false });
 
-  main.addEventListener("touchend", (e) => {
-    if (e.touches.length < 2) lastDist = 0;
-    onEnd();
-  });
 })();
+
+// ----- Custom Character-Based Background Generator (galattica-gen) -----
+function escapeXML(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function getPaletteGroups() {
+  const light = [];
+  const main = [];
+  const dark = [];
+  CONFIG.palette.forEach(c => {
+    const name = c.name.toLowerCase();
+    const hex = c.hex.toLowerCase();
+    if (hex === '#ffffff' || hex === '#000000') return; // Skip white and black for backgrounds
+    
+    if (name.includes("light")) {
+      light.push(c.hex);
+    } else if (name.includes("dark") || name === "navy" || name === "teal") {
+      dark.push(c.hex);
+    } else {
+      main.push(c.hex);
+    }
+  });
+  return { light, main, dark };
+}
+
+function generateRandomCustomBg() {
+  const groups = getPaletteGroups();
+  const layersCount = Math.random() < 0.5 ? 2 : 3; // 2 or 3 layers
+  const chosenColors = [];
+  const otherGroup = Math.random() < 0.5 ? groups.light : groups.dark;
+  const mainPool = [...groups.main];
+  const otherPool = [...otherGroup];
+  
+  const pickRandomUnique = (pool, used) => {
+    const avail = pool.filter(c => !used.includes(c));
+    if (avail.length === 0) return null;
+    const c = avail[Math.floor(Math.random() * avail.length)];
+    used.push(c);
+    return c;
+  };
+  
+  const usedHex = [];
+  if (mainPool.length > 0 && otherPool.length > 0 && layersCount >= 2) {
+    const c1 = pickRandomUnique(mainPool, usedHex);
+    if (c1) chosenColors.push(c1);
+    const c2 = pickRandomUnique(otherPool, usedHex);
+    if (c2) chosenColors.push(c2);
+  }
+  
+  const combinedPool = Array.from(new Set([...mainPool, ...otherPool]));
+  while (chosenColors.length < layersCount && combinedPool.length > 0) {
+    const c = pickRandomUnique(combinedPool, usedHex);
+    if (c) {
+      chosenColors.push(c);
+    } else {
+      break;
+    }
+  }
+  
+  while (chosenColors.length < layersCount) {
+    const nh = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+    chosenColors.push(nh);
+  }
+  
+  const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const usedPairs = new Set();
+  const generatedLayers = [];
+  
+  for (let i = 0; i < layersCount; i++) {
+    let letter = letters[Math.floor(Math.random() * letters.length)];
+    const ssTags = Array.from({length: 9}, (_, idx) => `ss${String(idx + 2).padStart(2, '0')}`);
+    let candidates = ssTags.filter(t => !usedPairs.has(`${letter}:${t}`));
+    if (candidates.length === 0) candidates = ssTags;
+    
+    let ss = candidates[Math.floor(Math.random() * candidates.length)];
+    usedPairs.add(`${letter}:${ss}`);
+    
+    generatedLayers.push({
+      letter: letter,
+      ss: ss,
+      color: chosenColors[i],
+      opacity: 1.0,
+      blendMode: Math.random() < 0.25 ? "multiply" : "normal"
+    });
+  }
+  
+  return generatedLayers;
+}
+
+function updateCustomBgSummary() {
+  const summary = document.getElementById("customBgSummary");
+  if (!summary) return;
+  const count = (state.customBgLayers || []).length;
+  if (count === 0) {
+    summary.textContent = "Nessun livello definito";
+  } else if (count === 1) {
+    summary.textContent = "1 livello definito";
+  } else {
+    summary.textContent = `${count} livelli definiti`;
+  }
+}
+window.updateCustomBgSummary = updateCustomBgSummary;
+
+(function setupCustomBgManager() {
+  const modal = document.getElementById("customBgModal");
+  const editBtn = document.getElementById("editCustomBgBtn");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const cancelModalBtn = document.getElementById("cancelModalBtn");
+  const saveModalBtn = document.getElementById("saveModalBtn");
+  const addLayerBtn = document.getElementById("addLayerBtn");
+  const modalRandomizeBtn = document.getElementById("modalRandomizeBtn");
+  const modalClearBtn = document.getElementById("modalClearBtn");
+  const sidebarRandomizeBtn = document.getElementById("randomizeCustomBgBtn");
+  
+  const bgTypeStandard = document.getElementById("bgTypeStandard");
+  const bgTypeCustom = document.getElementById("bgTypeCustom");
+  const standardBgSection = document.getElementById("standardBgSection");
+  const customBgSection = document.getElementById("customBgSection");
+  
+  // Sizing radios
+  const customBgFitWidth = document.getElementById("customBgFitWidth");
+  const customBgFitHeight = document.getElementById("customBgFitHeight");
+  const customBgFitCover = document.getElementById("customBgFitCover");
+  
+  const setBgType = (type) => {
+    if (type === "custom") {
+      state.customBgActive = true;
+      if (standardBgSection) standardBgSection.classList.add("hidden");
+      if (customBgSection) customBgSection.classList.remove("hidden");
+      
+      if (!state.customBgLayers || state.customBgLayers.length === 0) {
+        state.customBgLayers = generateRandomCustomBg();
+        updateCustomBgSummary();
+      }
+    } else {
+      state.customBgActive = false;
+      if (standardBgSection) standardBgSection.classList.remove("hidden");
+      if (customBgSection) customBgSection.classList.add("hidden");
+    }
+    draw(true);
+  };
+  
+  if (bgTypeStandard && bgTypeCustom) {
+    bgTypeStandard.addEventListener("change", () => setBgType("standard"));
+    bgTypeCustom.addEventListener("change", () => setBgType("custom"));
+  }
+  
+  const setBgFit = (fitMode) => {
+    state.customBgFit = fitMode;
+    saveState();
+    draw(true);
+    if (modal && !modal.classList.contains("hidden")) {
+      updateModalPreview();
+    }
+  };
+  
+  if (customBgFitWidth) customBgFitWidth.addEventListener("change", () => setBgFit("width"));
+  if (customBgFitHeight) customBgFitHeight.addEventListener("change", () => setBgFit("height"));
+  if (customBgFitCover) customBgFitCover.addEventListener("change", () => setBgFit("cover"));
+  
+  if (sidebarRandomizeBtn) {
+    sidebarRandomizeBtn.addEventListener("click", () => {
+      state.customBgLayers = generateRandomCustomBg();
+      updateCustomBgSummary();
+      draw(true);
+    });
+  }
+  
+  if (editBtn) {
+    editBtn.addEventListener("click", () => {
+      state.tempBgLayers = (state.customBgLayers || []).map(l => ({ ...l }));
+      
+      if (state.tempBgLayers.length === 0) {
+        state.tempBgLayers.push({
+          letter: "A",
+          ss: "ss02",
+          color: CONFIG.palette[0].hex,
+          opacity: 1.0,
+          blendMode: "normal"
+        });
+      }
+      
+      if (modal) modal.classList.remove("hidden");
+      renderModalLayers();
+      updateModalPreview();
+    });
+  }
+  
+  const closeModal = () => {
+    if (modal) modal.classList.add("hidden");
+    state.tempBgLayers = null;
+  };
+  
+  if (closeModalBtn) closeModalBtn.addEventListener("click", closeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener("click", closeModal);
+  
+  if (saveModalBtn) {
+    saveModalBtn.addEventListener("click", () => {
+      state.customBgLayers = state.tempBgLayers.map(l => ({ ...l }));
+      state.customBgActive = true;
+      if (bgTypeCustom) bgTypeCustom.checked = true;
+      if (standardBgSection) standardBgSection.classList.add("hidden");
+      if (customBgSection) customBgSection.classList.remove("hidden");
+      
+      updateCustomBgSummary();
+      closeModal();
+      draw(true);
+    });
+  }
+  
+  if (addLayerBtn) {
+    addLayerBtn.addEventListener("click", () => {
+      const newLetter = ["A", "B", "C", "D", "E", "F", "G", "H"][Math.floor(Math.random() * 8)];
+      const newSS = `ss${String(Math.floor(Math.random() * 9) + 2).padStart(2, '0')}`;
+      const randomHex = CONFIG.palette[Math.floor(Math.random() * CONFIG.palette.length)].hex;
+      
+      state.tempBgLayers.push({
+        letter: newLetter,
+        ss: newSS,
+        color: randomHex,
+        opacity: 1.0,
+        blendMode: "normal"
+      });
+      
+      renderModalLayers();
+      updateModalPreview();
+      
+      const list = document.getElementById("layersList");
+      if (list) {
+        setTimeout(() => { list.scrollTop = list.scrollHeight; }, 50);
+      }
+    });
+  }
+  
+  if (modalRandomizeBtn) {
+    modalRandomizeBtn.addEventListener("click", () => {
+      state.tempBgLayers = generateRandomCustomBg();
+      renderModalLayers();
+      updateModalPreview();
+    });
+  }
+  
+  if (modalClearBtn) {
+    modalClearBtn.addEventListener("click", () => {
+      state.tempBgLayers = [];
+      renderModalLayers();
+      updateModalPreview();
+    });
+  }
+  
+  function renderModalLayers() {
+    const list = document.getElementById("layersList");
+    if (!list) return;
+    list.innerHTML = "";
+    
+    if (state.tempBgLayers.length === 0) {
+      list.innerHTML = `<div class="muted" style="text-align: center; margin-top: 40px; font-style: italic;">Nessun livello inserito. Clicca "+ Aggiungi Livello" per iniziare.</div>`;
+      return;
+    }
+    
+    state.tempBgLayers.forEach((layer, idx) => {
+      const card = document.createElement("div");
+      card.className = "layer-card";
+      
+      const letterOptions = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        .map(l => `<option value="${l}" ${layer.letter === l ? 'selected' : ''}>Lettera ${l}</option>`)
+        .join("");
+        
+      const ssOptions = Array.from({length: 9}, (_, i) => i + 2)
+        .map(n => {
+          const ss = `ss${String(n).padStart(2, '0')}`;
+          return `<option value="${ss}" ${layer.ss === ss ? 'selected' : ''}>Set ${n} (${ss})</option>`;
+        })
+        .join("");
+      
+      card.innerHTML = `
+        <div class="layer-header">
+          <div class="layer-title-group">
+            <span class="layer-number">Livello ${idx + 1}</span>
+          </div>
+          <div class="layer-actions">
+            <button type="button" class="layer-action-btn move-up" ${idx === 0 ? 'disabled' : ''}>▲ Sposta Su</button>
+            <button type="button" class="layer-action-btn move-down" ${idx === state.tempBgLayers.length - 1 ? 'disabled' : ''}>▼ Sposta Giù</button>
+            <button type="button" class="layer-action-btn delete">✕ Elimina</button>
+          </div>
+        </div>
+        
+        <div class="layer-row">
+          <div>
+            <label>Pezzo (Lettera)</label>
+            <select class="layer-letter-select">
+              ${letterOptions}
+            </select>
+          </div>
+          <div>
+            <label>Stile (Stylistic Set)</label>
+            <select class="layer-ss-select">
+              ${ssOptions}
+            </select>
+          </div>
+        </div>
+        
+        <div class="modal-swatch-picker">
+          <label>Colore del Livello</label>
+          <div class="modal-swatches-grid"></div>
+        </div>
+        
+        <div class="layer-extra-row">
+          <div class="slider-group">
+            <div class="slider-val-header">
+              <label>Opacità</label>
+              <span class="opacity-val">${Math.round(layer.opacity * 100)}%</span>
+            </div>
+            <input type="range" class="layer-opacity-slider" min="0" max="1" step="0.05" value="${layer.opacity}" />
+          </div>
+          <div>
+            <label>Blend Mode</label>
+            <select class="layer-blend-select">
+              <option value="normal" ${layer.blendMode === 'normal' ? 'selected' : ''}>Normale</option>
+              <option value="multiply" ${layer.blendMode === 'multiply' ? 'selected' : ''}>Moltiplica</option>
+              <option value="screen" ${layer.blendMode === 'screen' ? 'selected' : ''}>Schiarisci</option>
+              <option value="overlay" ${layer.blendMode === 'overlay' ? 'selected' : ''}>Sovrapponi</option>
+            </select>
+          </div>
+        </div>
+      `;
+      
+      card.querySelector(".move-up").addEventListener("click", () => {
+        if (idx > 0) {
+          const temp = state.tempBgLayers[idx];
+          state.tempBgLayers[idx] = state.tempBgLayers[idx - 1];
+          state.tempBgLayers[idx - 1] = temp;
+          renderModalLayers();
+          updateModalPreview();
+        }
+      });
+      
+      card.querySelector(".move-down").addEventListener("click", () => {
+        if (idx < state.tempBgLayers.length - 1) {
+          const temp = state.tempBgLayers[idx];
+          state.tempBgLayers[idx] = state.tempBgLayers[idx + 1];
+          state.tempBgLayers[idx + 1] = temp;
+          renderModalLayers();
+          updateModalPreview();
+        }
+      });
+      
+      card.querySelector(".delete").addEventListener("click", () => {
+        state.tempBgLayers.splice(idx, 1);
+        renderModalLayers();
+        updateModalPreview();
+      });
+      
+      card.querySelector(".layer-letter-select").addEventListener("change", (e) => {
+        layer.letter = e.target.value;
+        updateModalPreview();
+      });
+      
+      card.querySelector(".layer-ss-select").addEventListener("change", (e) => {
+        layer.ss = e.target.value;
+        updateModalPreview();
+      });
+      
+      card.querySelector(".layer-blend-select").addEventListener("change", (e) => {
+        layer.blendMode = e.target.value;
+        updateModalPreview();
+      });
+      
+      const opacitySlider = card.querySelector(".layer-opacity-slider");
+      opacitySlider.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        layer.opacity = val;
+        card.querySelector(".opacity-val").textContent = `${Math.round(val * 100)}%`;
+        updateModalPreview();
+      });
+      
+      const grid = card.querySelector(".modal-swatches-grid");
+      CONFIG.palette.forEach(c => {
+        const chip = document.createElement("div");
+        chip.className = "modal-swatch-chip";
+        chip.style.backgroundColor = c.hex;
+        chip.title = c.name;
+        if (layer.color.toLowerCase() === c.hex.toLowerCase()) {
+          chip.classList.add("selected");
+        }
+        
+        chip.addEventListener("click", () => {
+          card.querySelectorAll(".modal-swatch-chip").forEach(el => el.classList.remove("selected"));
+          chip.classList.add("selected");
+          layer.color = c.hex;
+          updateModalPreview();
+        });
+        
+        grid.appendChild(chip);
+      });
+      
+      list.appendChild(card);
+    });
+  }
+  
+  function updateModalPreview() {
+    const preview = document.getElementById("modalBgPreview");
+    if (!preview) return;
+    
+    const layers = state.tempBgLayers || [];
+    const firstLayer = layers[0] || { letter: 'A', ss: 'ss02' };
+    const yBase = getGlyphCenterY(firstLayer.letter, firstLayer.ss);
+    
+    const layersContent = [...layers].reverse().map(layer => {
+      const letter = escapeXML(layer.letter || 'A');
+      const ss = escapeXML(layer.ss || 'ss02');
+      const color = escapeXML(layer.color || '#000000');
+      const opacity = layer.opacity !== undefined ? layer.opacity : 1.0;
+      const blendMode = layer.blendMode || 'normal';
+      
+      return `<text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="font-feature-settings: '${ss}' 1; mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`;
+    }).join("\n");
+    
+    preview.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="100%" height="100%" style="background-color: ${state.bgColor}; border-radius: 8px;">
+        ${layersContent}
+      </svg>
+    `;
+  }
+})();
+
 
 // ----- Boot -----
 (async () => {
@@ -737,6 +1206,34 @@ let bgSelectorController = null;
   await preloadGalatticaLogos(state);
   await initDefaultLogo();
   loadState();
+
+  // Initialize standard / custom panels based on state
+  const bgTypeStandard = document.getElementById("bgTypeStandard");
+  const bgTypeCustom = document.getElementById("bgTypeCustom");
+  const standardBgSection = document.getElementById("standardBgSection");
+  const customBgSection = document.getElementById("customBgSection");
+  
+  if (state.customBgActive) {
+    if (bgTypeCustom) bgTypeCustom.checked = true;
+    if (standardBgSection) standardBgSection.classList.add("hidden");
+    if (customBgSection) customBgSection.classList.remove("hidden");
+  } else {
+    if (bgTypeStandard) bgTypeStandard.checked = true;
+    if (standardBgSection) standardBgSection.classList.remove("hidden");
+    if (customBgSection) customBgSection.classList.add("hidden");
+  }
+  
+  // Set fit radios checked state
+  const fitWidthRadio = document.getElementById("customBgFitWidth");
+  const fitHeightRadio = document.getElementById("customBgFitHeight");
+  const fitCoverRadio = document.getElementById("customBgFitCover");
+  const fit = state.customBgFit || 'cover';
+  if (fit === 'width' && fitWidthRadio) fitWidthRadio.checked = true;
+  if (fit === 'height' && fitHeightRadio) fitHeightRadio.checked = true;
+  if (fit === 'cover' && fitCoverRadio) fitCoverRadio.checked = true;
+
+  updateCustomBgSummary();
+
   // URL Param support
   const urlParams = new URLSearchParams(window.location.search);
   const layoutParam = urlParams.get('tipologia');

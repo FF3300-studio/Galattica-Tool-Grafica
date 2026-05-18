@@ -74,8 +74,37 @@ ${faceCSS}
   // Background Color (Always drawn base)
   parts.push(`<rect width="100%" height="100%" fill="${bgColor}"/>`);
 
-  // Background Image (Overlay)
-  if (userBgDataURL) {
+  // Background Image (Overlay) or Custom Vector Background
+  if (state.customBgActive) {
+      const fit = state.customBgFit || 'cover';
+      let scale = 1.0;
+      if (fit === 'width') {
+          scale = W / 1000;
+      } else if (fit === 'height') {
+          scale = H / 1000;
+      } else {
+          // cover
+          scale = Math.max(W / 1000, H / 1000);
+      }
+      
+      const dx = W / 2 - 500 * scale;
+      const dy = H / 2 - 500 * scale;
+      
+      parts.push(`<g transform="translate(${dx}, ${dy}) scale(${scale})">`);
+      
+      const yBase = state.customBgY || 800;
+      
+      [...(state.customBgLayers || [])].reverse().forEach(layer => {
+          const letter = escapeXML(layer.letter || 'A');
+          const ss = escapeXML(layer.ss || 'ss02');
+          const color = escapeXML(layer.color || '#000000');
+          const opacity = layer.opacity !== undefined ? layer.opacity : 1.0;
+          const blendMode = layer.blendMode || 'normal';
+          
+          parts.push(`  <text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="font-feature-settings: '${ss}' 1; mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`);
+      });
+      parts.push(`</g>`);
+  } else if (userBgDataURL) {
       if (state.bgMode === 'cover') {
          // Force cover behavior using preserveAspectRatio slice
          parts.push(`<image href="${userBgDataURL}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" />`);

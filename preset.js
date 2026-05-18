@@ -37,7 +37,9 @@ export function initPreset(ctx){
       showLogo: !!state.showLogo,
       userBgDataURL: state.userBgDataURL || null,
       userBgAR: state.userBgAR ?? null,
-      bgName: state.bgName || null // New
+      customBgActive: !!state.customBgActive,
+      customBgLayers: state.customBgLayers || [],
+      customBgFit: state.customBgFit || "cover"
     };
     console.debug('[Preset] collectPreset ->', preset);
     return preset;
@@ -185,6 +187,39 @@ export function initPreset(ctx){
         // Explicit null in preset means clear background
         state.userBgDataURL = null; state.userBgAR = null;
         if(ctx.bgSelectorController) ctx.bgSelectorController.setValue(null);
+      }
+
+      // Restore Custom Background Settings
+      if (typeof preset.customBgActive !== 'undefined') {
+        state.customBgActive = !!preset.customBgActive;
+        const bgTypeStandard = document.getElementById("bgTypeStandard");
+        const bgTypeCustom = document.getElementById("bgTypeCustom");
+        if (state.customBgActive) {
+          if (bgTypeCustom) bgTypeCustom.checked = true;
+          document.getElementById("standardBgSection")?.classList.add("hidden");
+          document.getElementById("customBgSection")?.classList.remove("hidden");
+        } else {
+          if (bgTypeStandard) bgTypeStandard.checked = true;
+          document.getElementById("standardBgSection")?.classList.remove("hidden");
+          document.getElementById("customBgSection")?.classList.add("hidden");
+        }
+      }
+      
+      if (preset.customBgLayers && Array.isArray(preset.customBgLayers)) {
+        state.customBgLayers = preset.customBgLayers.map(l => ({ ...l }));
+        if (window.updateCustomBgSummary) {
+          window.updateCustomBgSummary();
+        }
+      }
+
+      if (typeof preset.customBgFit !== 'undefined') {
+        state.customBgFit = preset.customBgFit;
+        const widthRadio = document.getElementById("customBgFitWidth");
+        const heightRadio = document.getElementById("customBgFitHeight");
+        const coverRadio = document.getElementById("customBgFitCover");
+        if (state.customBgFit === 'width' && widthRadio) widthRadio.checked = true;
+        if (state.customBgFit === 'height' && heightRadio) heightRadio.checked = true;
+        if (state.customBgFit === 'cover' && coverRadio) coverRadio.checked = true;
       }
 
       draw(true);

@@ -63,7 +63,51 @@
         <hr class="sep" />
 
         <h3>Immagine di Sfondo</h3>
-        <div id="bgSelectorContainer"></div>
+        <div class="bg-type-selector">
+          <label class="bg-type-label">
+            <input type="radio" name="bgType" id="bgTypeStandard" value="standard" checked />
+            <span>Standard</span>
+          </label>
+          <label class="bg-type-label">
+            <input type="radio" name="bgType" id="bgTypeCustom" value="custom" />
+            <span>Fai uno Sfondo</span>
+          </label>
+        </div>
+
+        <div id="standardBgSection">
+          <div id="bgSelectorContainer"></div>
+        </div>
+
+        <div id="customBgSection" class="hidden">
+          <button id="editCustomBgBtn" type="button" class="action-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>🎨 Progetta Sfondo</span>
+          </button>
+          <button id="randomizeCustomBgBtn" type="button" class="random-bg-btn-large" style="width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>🎲 Genera Casuale</span>
+          </button>
+          
+          <div class="custom-bg-fit-mode-wrapper" style="margin-top: 14px;">
+            <label style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Dimensione Sfondo Custom</label>
+            <div class="bg-type-selector" style="margin-bottom: 0;">
+              <label class="bg-type-label">
+                <input type="radio" name="customBgFit" id="customBgFitWidth" value="width" />
+                <span>Larghezza</span>
+              </label>
+              <label class="bg-type-label">
+                <input type="radio" name="customBgFit" id="customBgFitHeight" value="height" />
+                <span>Altezza</span>
+              </label>
+              <label class="bg-type-label">
+                <input type="radio" name="customBgFit" id="customBgFitCover" value="cover" checked />
+                <span>Riempie</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="customBgSummary" class="muted" style="margin-top: 12px; text-align: center; font-style: italic;">
+            Nessun livello definito
+          </div>
+        </div>
 
         <hr class="sep" />
 
@@ -123,6 +167,44 @@
       <label for="zoomRange">Zoom</label>
       <input type="range" id="zoomRange" min="10" max="100" value="100" />
       <button id="resetZoom" type="button">Reset</button>
+    </div>
+
+    <!-- Modal per la personalizzazione dello sfondo custom -->
+    <div id="customBgModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Progetta Sfondo Personalizzato</h2>
+          <button id="closeModalBtn" type="button" class="close-btn" aria-label="Chiudi modal">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="modal-preview-panel">
+            <div class="modal-canvas-wrapper">
+              <div id="modalBgPreview" class="modal-bg-preview"></div>
+            </div>
+            <div class="preview-actions">
+              <button id="modalRandomizeBtn" type="button" class="action-btn">🎲 Genera Casuale</button>
+              <button id="modalClearBtn" type="button" class="random-bg-btn-large" style="margin-top: 0;">Reset</button>
+            </div>
+          </div>
+          
+          <div class="modal-controls-panel">
+            <div class="controls-header">
+              <h3>Livelli (Layers)</h3>
+              <button id="addLayerBtn" type="button" class="add-btn">+ Aggiungi Livello</button>
+            </div>
+            
+            <div id="layersList" class="layers-list">
+              <!-- Livelli caricati dinamicamente -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button id="cancelModalBtn" type="button" class="random-bg-btn-large" style="margin-top: 0;">Annulla</button>
+          <button id="saveModalBtn" type="button" class="action-btn" style="box-shadow: none;">Applica Sfondo</button>
+        </div>
+      </div>
     </div>
 
     <svg id="measureSVG" xmlns="http://www.w3.org/2000/svg"></svg>
