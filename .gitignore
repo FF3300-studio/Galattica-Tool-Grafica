@@ -31,3 +31,4 @@ yarn-error.log*
 # Project specific
 sfondi/
 galattica-gen/
+logs/
