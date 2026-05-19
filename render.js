@@ -101,7 +101,8 @@ ${faceCSS}
           const opacity = layer.opacity !== undefined ? layer.opacity : 1.0;
           const blendMode = layer.blendMode || 'normal';
           
-          parts.push(`  <text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="font-feature-settings: '${ss}' 1; mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`);
+          const ssStyle = (ss && ss !== 'none') ? `font-feature-settings: '${ss}' 1;` : '';
+          parts.push(`  <text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="${ssStyle} mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`);
       });
       parts.push(`</g>`);
   } else if (userBgDataURL) {

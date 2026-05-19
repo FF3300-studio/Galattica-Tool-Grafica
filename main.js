@@ -266,7 +266,7 @@ function getGlyphCenterY(letter, ss) {
     const ctx = canvas.getContext("2d");
     ctx.font = "1000px 'GalatticaGen'";
     if (ctx.fontFeatureSettings !== undefined) {
-      ctx.fontFeatureSettings = `'${ss}' 1`;
+      ctx.fontFeatureSettings = (ss && ss !== 'none') ? `'${ss}' 1` : 'normal';
     }
     const metrics = ctx.measureText ? ctx.measureText(letter) : null;
     if (metrics && metrics.actualBoundingBoxAscent !== undefined) {
@@ -1036,7 +1036,8 @@ window.updateCustomBgSummary = updateCustomBgSummary;
         .map(l => `<option value="${l}" ${layer.letter === l ? 'selected' : ''}>Lettera ${l}</option>`)
         .join("");
         
-      const ssOptions = Array.from({length: 9}, (_, i) => i + 2)
+      const baseOption = `<option value="none" ${layer.ss === 'none' ? 'selected' : ''}>Nessuno (Stile Base)</option>`;
+      const ssOptions = baseOption + Array.from({length: 9}, (_, i) => i + 2)
         .map(n => {
           const ss = `ss${String(n).padStart(2, '0')}`;
           return `<option value="${ss}" ${layer.ss === ss ? 'selected' : ''}>Set ${n} (${ss})</option>`;
@@ -1151,7 +1152,8 @@ window.updateCustomBgSummary = updateCustomBgSummary;
       const opacity = layer.opacity !== undefined ? layer.opacity : 1.0;
       const blendMode = layer.blendMode || 'normal';
       
-      return `<text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="font-feature-settings: '${ss}' 1; mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`;
+      const ssStyle = (ss && ss !== 'none') ? `font-feature-settings: '${ss}' 1;` : '';
+      return `<text x="500" y="${yBase}" font-family="'GalatticaGen', sans-serif" font-size="1000" style="${ssStyle} mix-blend-mode: ${blendMode};" fill="${color}" opacity="${opacity}" text-anchor="middle">${letter}</text>`;
     }).join("\n");
     
     preview.innerHTML = `
