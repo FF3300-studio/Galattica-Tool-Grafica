@@ -40,6 +40,8 @@ $entry = [
     'timestamp' => date('c', $timestamp),
     'title' => $data['title'] ?? 'Senza titolo',
     'exportType' => $data['exportType'] ?? 'unknown',
+    'layout' => $data['layout'] ?? 'EVENTO PLI',
+    'pageSize' => $data['pageSize'] ?? '1080x1440',
     'detailsFile' => $detailsFilename
 ];
 

@@ -262,8 +262,10 @@
             td:before { position: absolute; left: 16px; width: 35%; font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
             td:nth-of-type(1):before { content: "Data"; }
             td:nth-of-type(2):before { content: "Titolo"; }
-            td:nth-of-type(3):before { content: "Formato"; }
-            td:nth-of-type(4):before { content: "Azioni"; }
+            td:nth-of-type(3):before { content: "Tipologia"; }
+            td:nth-of-type(4):before { content: "Formato"; }
+            td:nth-of-type(5):before { content: "Tipo File"; }
+            td:nth-of-type(6):before { content: "Azioni"; }
             td:last-child { padding-left: 16px; }
         }
     </style>
@@ -303,7 +305,9 @@
                     <tr>
                         <th>Data e Ora</th>
                         <th>Titolo</th>
+                        <th>Tipologia</th>
                         <th>Formato</th>
+                        <th>Tipo File</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
@@ -388,7 +392,7 @@
 
         // --- Logging & Filtering ---
         async function loadLogs() {
-            logBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px;">Caricamento in corso...</td></tr>';
+            logBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px;">Caricamento in corso...</td></tr>';
             allLogs = await getLogs();
             populateMonthFilter();
             render();
@@ -417,6 +421,29 @@
 
         monthFilter.onchange = () => render();
 
+        function getLayoutLabel(layout) {
+            if (!layout) return "EVENTO PLI"; // Retrocompatibilità
+            return layout;
+        }
+
+        function getPageSizeLabel(pageSize, layout) {
+            if (!pageSize) return "Social (1080x1440 px)"; // Retrocompatibilità
+            switch (pageSize) {
+                case "1080x1440":
+                    return layout === "OPPORTUNITÀ/STRUMENTI" ? "Social (1080x1350 px)" : "Social (1080x1440 px)";
+                case "1080x1920":
+                    return "Storie (1080x1920 px)";
+                case "cover-web":
+                    return "Cover Web (686x457 px)";
+                case "A4":
+                    return "Stampa A4";
+                case "A3":
+                    return "Stampa A3";
+                default:
+                    return pageSize;
+            }
+        }
+
         function render() {
             const selectedMonth = monthFilter.value;
             const filtered = selectedMonth === "all" 
@@ -443,10 +470,15 @@
                 const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const timeStr = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                 
+                const layout = getLayoutLabel(log.layout);
+                const formatLabel = getPageSizeLabel(log.pageSize, log.layout);
+
                 return `
                     <tr>
                         <td class="timestamp">${dateStr} <br><small>${timeStr}</small></td>
                         <td><strong>${escapeHtml(log.title)}</strong></td>
+                        <td><span style="font-weight: 600; color: var(--accent); font-size: 13px;">${escapeHtml(layout)}</span></td>
+                        <td><span style="font-weight: 500; color: var(--ink); font-size: 13px;">${escapeHtml(formatLabel)}</span></td>
                         <td><span class="badge badge-${log.exportType}">${log.exportType.toUpperCase()}</span></td>
                         <td>
                             <button class="btn btn-outline download-btn" data-id="${log.detailsFile || index}">

@@ -6,9 +6,12 @@ const LOG_KEY = "galattica_log_export";
  * @param {string} exportType - "png" or "pdf".
  */
 export async function addToLog(state, exportType) {
+  const pageSize = document.getElementById("pageSize")?.value || "1080x1440";
   const entry = {
     title: state.content.titolo || "Senza titolo",
     exportType: exportType,
+    layout: state.layout || "EVENTO PLI",
+    pageSize: pageSize,
     configuration: state // Full state
   };
 
@@ -36,6 +39,8 @@ export async function addToLog(state, exportType) {
             timestamp: new Date().toISOString(),
             title: entry.title,
             exportType: exportType,
+            layout: entry.layout,
+            pageSize: entry.pageSize,
             configuration: entry.configuration,
             isLocalOnly: true 
         });
